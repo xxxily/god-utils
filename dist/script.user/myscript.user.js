@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         个人定制脚本
 // @namespace    http://xxxily.co
-// @version      0.0.7
+// @version      0.0.8
 // @license      LGPLv3
 // @description  个人专用脚本
 // @author       Blaze
@@ -26,6 +26,7 @@
 // @grant        GM_xmlhttpRequest
 // @license      GPL
 // @run-at       document-start
+// @updateURL    https://github.com/xxxily/god-utils/raw/master/dist/script.user/myscript.user.js
 // @require      https://cdn.bootcss.com/jquery/3.5.1/jquery.min.js
 // ==/UserScript==
 (function (w) { if (w) { w.name = 'myscript'; } })();
