@@ -4,6 +4,7 @@
   "description": "good utils",
   "author": "xxxily",
   "scripts": {
+    "cypress:open": "cypress open",
     "rollup": "rollup -w -c config/rollup.config.js",
     "myscript:prod": "npm run rollup --mode-dev --proj-myscript",
     "server": "node bin/staticService/index.js"
@@ -26,10 +27,12 @@
     "cross-env": "^7.0.2",
     "css-hot-loader": "^1.4.4",
     "css-loader": "^5.0.0",
+    "cypress": "^5.5.0",
     "dayjs": "^1.8.16",
     "eslint": "^7.12.1",
     "eslint-config-standard": "^16.0.0",
     "eslint-loader": "^4.0.0",
+    "eslint-plugin-cypress": "^2.11.2",
     "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.0.1",
