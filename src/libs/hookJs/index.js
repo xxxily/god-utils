@@ -7,15 +7,15 @@
  * @github       https://github.com/xxxily
  */
 
+const toStr = Function.prototype.call.bind(Object.prototype.toString)
 const util = {
-  toStr: (obj) => Object.prototype.toString.call(obj),
-  isObj: obj => Object.prototype.toString.call(obj) === '[object Object]',
+  isObj: obj => toStr(obj) === '[object Object]',
   /* 判断是否为引用类型，用于更宽泛的场景 */
   isRef: obj => typeof obj === 'object',
-  isReg: obj => Object.prototype.toString.call(obj) === '[object RegExp]',
+  isReg: obj => toStr(obj) === '[object RegExp]',
   isFn: obj => obj instanceof Function,
-  isAsyncFn: fn => Object.prototype.toString.call(fn) === '[object AsyncFunction]',
-  isPromise: obj => Object.prototype.toString.call(obj) === '[object Promise]',
+  isAsyncFn: fn => toStr(fn) === '[object AsyncFunction]',
+  isPromise: obj => toStr(obj) === '[object Promise]',
   firstUpperCase: str => str.replace(/^\S/, s => s.toUpperCase()),
   debug: {
     log () {
