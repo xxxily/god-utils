@@ -2,19 +2,26 @@ import ready from '../../../../src/libs/utils/ready'
 const $ = Cypress.$
 const $dom = selecter => $(document.querySelectorAll(selecter))
 
+/* 模拟插入div节点 */
+function appendDiv (className) {
+  className = Array.isArray(className) ? className : [className]
+  const strArr = []
+  className.forEach(name => {
+    strArr.push(`<div class="${name}">${name}</div>`)
+  })
+  $dom('body').append(strArr.join(''))
+}
+
 describe('ready单测', () => {
-  before(done => {
+  before(() => {
     console.log('-------- Before Test --------')
-    done()
   })
-  beforeEach(done => {
+  beforeEach(() => {
     $dom('body').html('')
-    done()
   })
-  afterEach(done => {
+  afterEach(() => {
     $dom('body').html('')
     cy.clearCookies()
-    done()
   })
 
   it('基本调用', () => {
@@ -28,7 +35,7 @@ describe('ready单测', () => {
       expect(isReady).to.equal(true)
     })
 
-    $dom('body').append('<div class="test1">test1</div>')
+    appendDiv(['test1'])
   })
 
   it('数组传参', () => {
@@ -42,7 +49,7 @@ describe('ready单测', () => {
       expect(isReady).to.equal(2)
     })
 
-    $dom('body').append('<div class="test2">test2</div><div class="test3">test3</div>')
+    appendDiv(['test2', 'test3'])
   })
 
   it('重复调用', () => {
@@ -60,7 +67,7 @@ describe('ready单测', () => {
       expect(isReady).to.equal(2)
     })
 
-    $dom('body').append('<div class="test4">test4</div>')
+    appendDiv(['test4'])
   })
 
   it('shadow DOM支持', () => {

@@ -9,6 +9,7 @@
 
 const toStr = Function.prototype.call.bind(Object.prototype.toString)
 const util = {
+  toStr,
   isObj: obj => toStr(obj) === '[object Object]',
   /* 判断是否为引用类型，用于更宽泛的场景 */
   isRef: obj => typeof obj === 'object',
