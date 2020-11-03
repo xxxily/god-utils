@@ -13,9 +13,9 @@ window.myTools_ = {
 
     /* 检查某个字符串是否是在中文字符集里面的 */
     function isCJK (str) {
-      var CJKBegin = '一'.charCodeAt(0)
-      var CJKEnd = '龥'.charCodeAt(0)
-      var charCode = str.charCodeAt(0)
+      const CJKBegin = '一'.charCodeAt(0)
+      const CJKEnd = '龥'.charCodeAt(0)
+      const charCode = str.charCodeAt(0)
       if (charCode >= CJKBegin && charCode <= CJKEnd) {
         return true
       } else {
@@ -26,8 +26,8 @@ window.myTools_ = {
     const splitStr = ['#', '$', '%', '|', ',', '-', '=', '`']
     const tmpArr = []
     /* 进行字符串随机插入分隔符操作 */
-    for (var i = 0; i < str.length; i++) {
-      var item = str[i]
+    for (let i = 0; i < str.length; i++) {
+      const item = str[i]
       tmpArr.push(item)
 
       if (!splitStr.includes(item) && isCJK(item) && i < str.length - 1) {

@@ -6,7 +6,7 @@
  * @github    https://github.com/xxxily
  */
 
-var videoCapturer = {
+const videoCapturer = {
   /**
    * 进行截图操作
    * @param video {dom} -必选 video dom 标签

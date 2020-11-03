@@ -12,7 +12,7 @@
  * @source -必选（Object|Array）需拷贝的对象或数组
  */
 function clone (source) {
-  var result = {}
+  let result = {}
 
   if (typeof source !== 'object') {
     return source
@@ -23,7 +23,7 @@ function clone (source) {
   if (Object.prototype.toString.call(source) === '[object Null]') {
     result = null
   }
-  for (var key in source) {
+  for (const key in source) {
     result[key] = (typeof source[key] === 'object') ? clone(source[key]) : source[key]
   }
   return result
@@ -32,7 +32,7 @@ function clone (source) {
 /* 遍历对象，但不包含其原型链上的属性 */
 function forIn (obj, fn) {
   fn = fn || function () {}
-  for (var key in obj) {
+  for (const key in obj) {
     if (Object.hasOwnProperty.call(obj, key)) {
       fn(key, obj[key])
     }
@@ -93,7 +93,7 @@ function mergeObj (objA, objB, concatArr) {
  */
 function merge () {
   let result = arguments[0]
-  for (var i = 0; i < arguments.length; i++) {
+  for (let i = 0; i < arguments.length; i++) {
     if (i) {
       result = mergeObj(result, arguments[i])
     }

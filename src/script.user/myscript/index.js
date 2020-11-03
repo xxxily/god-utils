@@ -141,11 +141,11 @@ const taskMap = [
     disable: true,
     run: function () {
       function delBaiduAd () {
-        var resultDom = document.querySelectorAll('#content_left>div')
+        const resultDom = document.querySelectorAll('#content_left>div')
         console.clear()
         console.log('百度广告过滤', resultDom)
-        for (var i = 0; i < resultDom.length; i++) {
-          var className = resultDom[i].className
+        for (let i = 0; i < resultDom.length; i++) {
+          const className = resultDom[i].className
           if (!/result/.test(className)) {
             resultDom[i].remove()
           }
@@ -165,13 +165,13 @@ const taskMap = [
     run: function () {
       // 种子文件介绍页
       if (/torrent/.test(window.location.href)) {
-        var aimDom = document.querySelectorAll('#zdownload a')
+        const aimDom = document.querySelectorAll('#zdownload a')
         if (!aimDom || aimDom.length === 0) {
           console.error('当前页面没匹配到种子结果！')
           return false
         }
         if (aimDom.length > 1) {
-          for (var i = 0; i < aimDom.length; i++) {
+          for (let i = 0; i < aimDom.length; i++) {
             aimDom[i].click()
           }
         } else {
@@ -189,7 +189,7 @@ const taskMap = [
           var timeOut = setInterval(function () {
             const downA1 = document.getElementById('downA1')
             if (downA1) {
-              var link = downA1.href.trim()
+              const link = downA1.href.trim()
               if (link && link !== 'javascript:;') {
                 downA1.setAttribute('target', '_self')
                 downA1.click()
@@ -302,8 +302,8 @@ const taskMap = [
         function getCurYtpQuality () {
           let curQuality = ''
           const qualityList = ytpQuality()
-          for (var i = 0; i < qualityList.length; i++) {
-            var item = qualityList[i]
+          for (let i = 0; i < qualityList.length; i++) {
+            const item = qualityList[i]
             if (item.checked) {
               curQuality = item.quality
               break
@@ -375,9 +375,9 @@ function init () {
     return false
   }
   // 递归处理任务队列
-  var taskLen = taskMap.length
-  for (var i = 0; i < taskLen; i++) {
-    var item = taskMap[i]
+  const taskLen = taskMap.length
+  for (let i = 0; i < taskLen; i++) {
+    const item = taskMap[i]
     if (!item.disable) {
       matchAndRun(item.match, item.run, item)
     }
