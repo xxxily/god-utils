@@ -1,0 +1,9 @@
+{
+  "extension": [".js", ".vue"],
+  "include": ["src/**/*.{js,vue}"],
+  "exclude": ["src/script.user/**/*.{js}", "**/*.spec.js"],
+  "all": true,
+  "sourceMap": false,
+  "instrument": true,
+  "per-file": true
+}
