@@ -358,8 +358,12 @@ const taskMap = [
         setYtpQualityByLocalStorageVal()
 
         /* 视频地址发生改变时重新执行画质设置逻辑 */
+        let pageUrl = location.href
         attrObserver(['#player-container video'], () => {
-          setYtpQualityByLocalStorageVal()
+          if (pageUrl !== location.href) {
+            pageUrl = location.href
+            setYtpQualityByLocalStorageVal()
+          }
         }, ['src'])
       })
     }

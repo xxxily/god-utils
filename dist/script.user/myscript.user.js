@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         个人定制脚本
 // @namespace    http://xxxily.co
-// @version      0.0.8
+// @version      0.0.9
 // @license      LGPLv3
 // @description  个人专用脚本
 // @author       Blaze
@@ -594,8 +594,12 @@ const taskMap = [
         setYtpQualityByLocalStorageVal();
 
         /* 视频地址发生改变时重新执行画质设置逻辑 */
+        let pageUrl = location.href;
         attrObserver(['#player-container video'], () => {
-          setYtpQualityByLocalStorageVal();
+          if (pageUrl !== location.href) {
+            pageUrl = location.href;
+            setYtpQualityByLocalStorageVal();
+          }
         }, ['src']);
       });
     }
