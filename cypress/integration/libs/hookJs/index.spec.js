@@ -108,6 +108,19 @@ describe('hookJs单测', () => {
     hookJs.unHook(Math, 'min')
   })
 
+  it('非代理模式的hook', () => {
+    ['before', 'after', 'replace', 'error', 'hangUp'].forEach(type => {
+      hookJs.hook(console, 'info', (args) => {
+        console.log('noProxy hook')
+      }, type, null, {}, true)
+    })
+
+    expect(console.info).not.throw()
+    expect(console.info).to.property('originMethod')
+
+    hookJs.unHook(console, 'info')
+  })
+
   it.skip('TODO: 修改运行结果', () => {
     hookJs.hook(Math, 'min', (args) => {
       args[1] = 0.0001
