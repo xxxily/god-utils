@@ -17,6 +17,7 @@ describe('hookJs单测', () => {
     console.log('-------- Before Test --------')
   })
   beforeEach(() => {
+    window._debugMode_ = true
     $dom('body').html('')
   })
   afterEach(() => {
@@ -155,6 +156,33 @@ describe('hookJs单测', () => {
     Reflect.ownKeys(window).forEach(keyName => {
       if (window[keyName] instanceof Function) {
         expect(window[keyName]).have.property('originMethod') && expect(window[keyName]).to.eql(window[keyName].originMethod)
+      }
+    })
+  })
+
+  it('hookClass测试', () => {
+    hookJs.hookClass(window, 'XMLHttpRequest', {
+      get () {},
+      set () {},
+      has () {},
+      deleteProperty () {},
+      ownKeys () {},
+      getOwnPropertyDescriptor () {},
+      defineProperty () {},
+      preventExtensions () {},
+      getPrototypeOf () {},
+      isExtensible () {},
+      setPrototypeOf () {},
+      apply () {},
+      construct () {}
+    })
+
+    // const testObj = HTMLElement.prototype
+    const testObj = document
+    getAllKeys(testObj).forEach(item => {
+      const allowHook = hookJs.isAllowHook(testObj, item)
+      if (typeof item === 'string') {
+        !allowHook && console.log(`[${item}]`, allowHook)
       }
     })
   })

@@ -18,6 +18,7 @@ const util = {
   isAsyncFn: fn => toStr(fn) === '[object AsyncFunction]',
   isPromise: obj => toStr(obj) === '[object Promise]',
   firstUpperCase: str => str.replace(/^\S/, s => s.toUpperCase()),
+  toArr: arg => Array.from(Array.isArray(arg) ? arg : [arg]),
   debug: {
     log () {
       let log = window.console.log
@@ -27,6 +28,13 @@ const util = {
         log.apply(window.console, arguments)
       }
     }
+  },
+  /* 获取包含自身、继承、可枚举、不可枚举的键名 */
+  getAllKeys (obj) {
+    const tmpArr = []
+    for (const key in obj) { tmpArr.push(key) }
+    const allKeys = Array.from(new Set(tmpArr.concat(Reflect.ownKeys(obj))))
+    return allKeys
   }
 }
 
@@ -219,16 +227,6 @@ const hookJs = {
       result = rule
     }
 
-    /* 获取包含自身、继承、可枚举、不可枚举的键名 */
-    let allKeys = []
-    function getAllKeys () {
-      if (allKeys.length) { return allKeys }
-      const tmpArr = []
-      for (const key in obj) { tmpArr.push(key) }
-      allKeys = Array.from(new Set(tmpArr.concat(Reflect.ownKeys(obj))))
-      return allKeys
-    }
-
     /**
      * for in、Object.keys与Reflect.ownKeys的区别见：
      * https://es6.ruanyifeng.com/#docs/object#%E5%B1%9E%E6%80%A7%E7%9A%84%E9%81%8D%E5%8E%86
@@ -238,9 +236,9 @@ const hookJs = {
     } else if (rule === '**') {
       result = Reflect.ownKeys(obj)
     } else if (rule === '***') {
-      result = getAllKeys()
+      result = util.getAllKeys(obj)
     } else if (util.isReg(rule)) {
-      result = getAllKeys().filter(keyName => rule.test(keyName))
+      result = util.getAllKeys(obj).filter(keyName => rule.test(keyName))
     }
 
     /* 如果存在排除规则，则需要进行排除 */
@@ -255,7 +253,7 @@ const hookJs = {
       }
     }
 
-    return result
+    return util.toArr(result)
   },
   /**
    * 判断某个函数是否已经被hook
@@ -263,8 +261,25 @@ const hookJs = {
    * @returns {boolean}
    */
   isHook (fn) {
-    return fn && util.isFn(fn.originMethod) && fn !== fn.originMethod
+    return Boolean(fn && util.isFn(fn.originMethod) && fn !== fn.originMethod)
   },
+
+  /**
+   * 判断对象下的某个值是否具备hook的条件
+   * 注意：具备hook条件和能否直接修改值是两回事，
+   * 在进行hook的时候还要检查descriptor.writable是否为false
+   * 如果为false则要修改成true才能hook成功
+   * @param parentObj
+   * @param keyName
+   * @returns {boolean}
+   */
+  isAllowHook (parentObj, keyName) {
+    /* 有些对象会设置getter，让读取值的时候就抛错，所以需要try catch 判断能否正常读取属性 */
+    try { if (!parentObj[keyName]) return false } catch (e) { return false }
+    const descriptor = Object.getOwnPropertyDescriptor(parentObj, keyName)
+    return !(descriptor && descriptor.configurable === false)
+  },
+
   /**
    * hook 核心函数
    * @param parentObj {Object} -必选 被hook函数依赖的父对象
@@ -286,13 +301,9 @@ const hookJs = {
     const t = this
 
     hookMethods = t._getObjKeysByRule(parentObj, hookMethods)
-    hookMethods = Array.isArray(hookMethods) ? hookMethods : [hookMethods]
-
     hookMethods.forEach(methodName => {
-      /* 原型链上的methodName能遍历出来，但进行读写则会出错，所以需要通过try catch进行预判 */
-      try {
-        if (!parentObj[methodName]) return false
-      } catch (e) {
+      if (!t.isAllowHook(parentObj, methodName)) {
+        util.debug.log(`${util.toStr(parentObj)} [${methodName}] does not support modification`)
         return false
       }
 
@@ -314,6 +325,11 @@ const hookJs = {
       t._addHook(hookMethod, fn, type)
     })
   },
+
+  hookClass (parentObj, hookMethods, proxyHandler) {
+    //
+  },
+
   /**
    * 取消对某个函数的hook
    * @param parentObj {Object} -必选 要取消被hook函数依赖的父对象
@@ -329,12 +345,8 @@ const hookJs = {
 
     const t = this
     hookMethods = t._getObjKeysByRule(parentObj, hookMethods)
-    hookMethods = Array.isArray(hookMethods) ? hookMethods : [hookMethods]
-
     hookMethods.forEach(methodName => {
-      try {
-        if (!parentObj[methodName] || !parentObj[methodName].originMethod) return false
-      } catch (e) {
+      if (!t.isAllowHook(parentObj, methodName) || !parentObj[methodName].originMethod) {
         return false
       }
 
