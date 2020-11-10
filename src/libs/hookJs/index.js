@@ -7,6 +7,7 @@
  * @github       https://github.com/xxxily
  */
 
+const win = typeof window === 'undefined' ? global : window
 const toStr = Function.prototype.call.bind(Object.prototype.toString)
 const util = {
   toStr,
@@ -21,11 +22,11 @@ const util = {
   toArr: arg => Array.from(Array.isArray(arg) ? arg : [arg]),
   debug: {
     log () {
-      let log = window.console.log
+      let log = win.console.log
       /* 如果log也被hook了，则使用未被hook前的log函数 */
       if (log.originMethod) { log = log.originMethod }
-      if (window._debugMode_) {
-        log.apply(window.console, arguments)
+      if (win._debugMode_) {
+        log.apply(win.console, arguments)
       }
     }
   },
@@ -141,7 +142,7 @@ const hookJs = {
     }
 
     /* 不存在代理对象或为了提高性能指定不使用代理方式进行hook时，则使用_hookMethodcGenerator进行hook */
-    if (!window.Proxy || noProxy) {
+    if (!Proxy || noProxy) {
       context = context || parentObj
       hookMethod = function () {
         return t._runHooks(parentObj, methodName, originMethod, hookMethod, originMethod, context, arguments)
