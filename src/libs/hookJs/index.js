@@ -58,78 +58,66 @@ const hookJs = {
       hookMethod[hookKeyName].push(fn)
     }
   },
-  _hookMethodcGenerator (parentObj, methodName, originMethod, context) {
-    context = context || parentObj
-    const hookMethod = function () {
-      const execArgs = arguments
-      const errorHooks = hookMethod.errorHooks || []
-      const hangUpHooks = hookMethod.hangUpHooks || []
-      const replaceHooks = hookMethod.replaceHooks || []
-      const execInfo = {
-        result: null,
-        error: null,
-        args: execArgs,
-        type: ''
-      }
-
-      function runHooks (hooks, type) {
-        execInfo.type = type || ''
-        if (Array.isArray(hooks)) {
-          hooks.forEach(fn => {
-            if (util.isFn(fn)) {
-              fn(execArgs, parentObj, methodName, originMethod, execInfo, context)
-            }
-          })
-        }
-      }
-
-      runHooks(hookMethod.beforeHooks, 'before')
-
-      if (hangUpHooks.length || replaceHooks.length) {
-        /**
-         * 当存在hangUpHooks或replaceHooks的时候是不会触发原来函数的
-         * 本质上来说hangUpHooks和replaceHooks是一样的，只是外部的定义描述不一致和分类不一致而已
-         */
-        runHooks(hookMethod.hangUpHooks)
-        runHooks(hookMethod.replaceHooks)
-      } else {
-        if (errorHooks.length) {
-          try {
-            execInfo.result = originMethod.apply(context, arguments)
-          } catch (err) {
-            execInfo.error = err
-            runHooks(errorHooks, 'error')
-            throw err
-          }
-        } else {
-          execInfo.result = originMethod.apply(context, arguments)
-        }
-      }
-
-      /* 执行afterHooks，但如果返回的是Promise则需进一步细分处理 */
-      if (util.isPromise(execInfo.result)) {
-        execInfo.result.then(() => {
-          runHooks(hookMethod.afterHooks, 'after')
-          return Promise.resolve.apply(Promise, arguments)
-        }).catch(err => {
-          execInfo.error = err
-          runHooks(errorHooks, 'error')
-          return Promise.reject(err)
-        })
-      } else {
-        runHooks(hookMethod.afterHooks, 'after')
-      }
-
-      return execInfo.result
+  _runHooks (parentObj, methodName, originMethod, hookMethod, target, ctx, args) {
+    const errorHooks = hookMethod.errorHooks || []
+    const hangUpHooks = hookMethod.hangUpHooks || []
+    const replaceHooks = hookMethod.replaceHooks || []
+    const execInfo = {
+      result: null,
+      error: null,
+      args: args,
+      type: ''
     }
 
-    hookMethod.originMethod = originMethod
-    originMethod.hookMethod = hookMethod
-    hookMethod.isHook = true
+    function runHooks (hooks, type) {
+      execInfo.type = type || ''
+      if (Array.isArray(hooks)) {
+        hooks.forEach(fn => {
+          if (util.isFn(fn)) {
+            fn(args, parentObj, methodName, originMethod, execInfo, ctx)
+          }
+        })
+      }
+    }
 
-    util.debug.log(`[hook method] ${util.toStr(parentObj)} ${methodName}`)
+    runHooks(hookMethod.beforeHooks, 'before')
 
-    return hookMethod
+    if (hangUpHooks.length || replaceHooks.length) {
+      /**
+       * 当存在hangUpHooks或replaceHooks的时候是不会触发原来函数的
+       * 本质上来说hangUpHooks和replaceHooks是一样的，只是外部的定义描述不一致和分类不一致而已
+       */
+      runHooks(hookMethod.hangUpHooks, 'hangUp')
+      runHooks(hookMethod.replaceHooks, 'replace')
+    } else {
+      if (errorHooks.length) {
+        try {
+          execInfo.result = target.apply(ctx, args)
+        } catch (err) {
+          execInfo.error = err
+          runHooks(errorHooks, 'error')
+          throw err
+        }
+      } else {
+        execInfo.result = target.apply(ctx, args)
+      }
+    }
+
+    /* 执行afterHooks，但如果返回的是Promise则需进一步细分处理 */
+    if (util.isPromise(execInfo.result)) {
+      execInfo.result.then(() => {
+        runHooks(hookMethod.afterHooks, 'after')
+        return Promise.resolve.apply(Promise, arguments)
+      }).catch(err => {
+        execInfo.error = err
+        runHooks(errorHooks, 'error')
+        return Promise.reject(err)
+      })
+    } else {
+      runHooks(hookMethod.afterHooks, 'after')
+    }
+
+    return execInfo.result
   },
   /* 使用代理进行hook比直接运行originMethod.apply的错误率更低，但性能也会稍差些 */
   _proxyMethodcGenerator (parentObj, methodName, originMethod, context, noProxy, proxyHandler) {
@@ -154,75 +142,20 @@ const hookJs = {
 
     /* 不存在代理对象或为了提高性能指定不使用代理方式进行hook时，则使用_hookMethodcGenerator进行hook */
     if (!window.Proxy || noProxy) {
-      return this._hookMethodcGenerator.apply(this, arguments)
+      context = context || parentObj
+      hookMethod = function () {
+        return t._runHooks(parentObj, methodName, originMethod, hookMethod, originMethod, context, arguments)
+      }
+    } else {
+      /* 注意：使用Proxy代理，hookMethod和originMethod将共用同一对象 */
+      hookMethod = new Proxy(originMethod, {
+        apply (target, ctx, args) {
+          ctx = context || ctx
+          return t._runHooks(parentObj, methodName, originMethod, hookMethod, target, ctx, args)
+        },
+        ...proxyHandler
+      })
     }
-
-    /* 注意：使用Proxy代理，hookMethod和originMethod将共用同一对象 */
-    hookMethod = new Proxy(originMethod, {
-      apply (target, ctx, args) {
-        ctx = context || ctx
-        const errorHooks = hookMethod.errorHooks || []
-        const hangUpHooks = hookMethod.hangUpHooks || []
-        const replaceHooks = hookMethod.replaceHooks || []
-        const execInfo = {
-          result: null,
-          error: null,
-          args: args,
-          type: ''
-        }
-
-        function runHooks (hooks, type) {
-          execInfo.type = type || ''
-          if (Array.isArray(hooks)) {
-            hooks.forEach(fn => {
-              if (util.isFn(fn)) {
-                fn(args, parentObj, methodName, originMethod, execInfo, ctx)
-              }
-            })
-          }
-        }
-
-        runHooks(hookMethod.beforeHooks, 'before')
-
-        if (hangUpHooks.length || replaceHooks.length) {
-          /**
-           * 当存在hangUpHooks或replaceHooks的时候是不会触发原来函数的
-           * 本质上来说hangUpHooks和replaceHooks是一样的，只是外部的定义描述不一致和分类不一致而已
-           */
-          runHooks(hookMethod.hangUpHooks, 'hangUp')
-          runHooks(hookMethod.replaceHooks, 'replace')
-        } else {
-          if (errorHooks.length) {
-            try {
-              execInfo.result = target.apply(ctx, args)
-            } catch (err) {
-              execInfo.error = err
-              runHooks(errorHooks, 'error')
-              throw err
-            }
-          } else {
-            execInfo.result = target.apply(ctx, args)
-          }
-        }
-
-        /* 执行afterHooks，但如果返回的是Promise则需进一步细分处理 */
-        if (util.isPromise(execInfo.result)) {
-          execInfo.result.then(() => {
-            runHooks(hookMethod.afterHooks, 'after')
-            return Promise.resolve.apply(Promise, arguments)
-          }).catch(err => {
-            execInfo.error = err
-            runHooks(errorHooks, 'error')
-            return Promise.reject(err)
-          })
-        } else {
-          runHooks(hookMethod.afterHooks, 'after')
-        }
-
-        return execInfo.result
-      },
-      ...proxyHandler
-    })
 
     hookMethod.originMethod = originMethod
     originMethod.hookMethod = hookMethod
