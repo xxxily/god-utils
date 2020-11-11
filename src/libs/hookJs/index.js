@@ -166,7 +166,7 @@ const hookJs = {
       if (classHook) {
         context = context || parentObj
         handler.construct = function (target, args, newTarget) {
-          return t._runHooks(parentObj, methodName, originMethod, hookMethod, target, context, args)
+          return t._runHooks(parentObj, methodName, originMethod, hookMethod, target, context, args, classHook)
         }
       } else {
         handler.apply = function (target, ctx, args) {
@@ -357,6 +357,9 @@ const hookJs = {
 
           hookMethod.isHook = false
           parentObj[methodName] = originMethod
+          delete parentObj[methodName].originMethod
+          delete parentObj[methodName].hookMethod
+          delete parentObj[methodName].isHook
           util.debug.log(`[unHook method] ${util.toStr(parentObj)} ${methodName}`)
         }
       }

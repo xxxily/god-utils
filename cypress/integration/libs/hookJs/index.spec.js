@@ -155,36 +155,23 @@ describe('hookJs单测', () => {
 
     Reflect.ownKeys(window).forEach(keyName => {
       if (window[keyName] instanceof Function) {
-        expect(window[keyName]).have.property('originMethod') && expect(window[keyName]).to.eql(window[keyName].originMethod)
+        expect(window[keyName]).not.have.property('originMethod')
+        expect(window[keyName]).not.have.property('hookMethod')
       }
     })
   })
 
-  it.skip('hookClass测试', () => {
-    hookJs.hookClass(window, 'XMLHttpRequest', {
-      get () {},
-      set () {},
-      has () {},
-      deleteProperty () {},
-      ownKeys () {},
-      getOwnPropertyDescriptor () {},
-      defineProperty () {},
-      preventExtensions () {},
-      getPrototypeOf () {},
-      isExtensible () {},
-      setPrototypeOf () {},
-      apply () {},
-      construct () {}
-    })
+  it.only('classHook测试', () => {
+    let result = false
+    hookJs.hook(window, 'XMLHttpRequest', () => {
+      result = true
+    }, '', true)
 
-    // const testObj = HTMLElement.prototype
-    const testObj = document
-    getAllKeys(testObj).forEach(item => {
-      const allowHook = hookJs.isAllowHook(testObj, item)
-      if (typeof item === 'string') {
-        !allowHook && console.log(`[${item}]`, allowHook)
-      }
-    })
+    const xhr = new XMLHttpRequest()
+
+    expect(result).to.equal(true)
+    expect(XMLHttpRequest).have.property('originMethod')
+    expect(xhr).not.have.property('originMethod')
   })
 })
 
