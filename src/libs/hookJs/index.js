@@ -59,7 +59,7 @@ const hookJs = {
       hookMethod[hookKeyName].push(fn)
     }
   },
-  _runHooks (parentObj, methodName, originMethod, hookMethod, target, ctx, args) {
+  _runHooks (parentObj, methodName, originMethod, hookMethod, target, ctx, args, classHook) {
     const errorHooks = hookMethod.errorHooks || []
     const hangUpHooks = hookMethod.hangUpHooks || []
     const replaceHooks = hookMethod.replaceHooks || []
@@ -81,6 +81,19 @@ const hookJs = {
       }
     }
 
+    const runTarget = (function () {
+      if (classHook) {
+        return function () {
+          // eslint-disable-next-line new-cap
+          execInfo.result = new target(...args)
+        }
+      } else {
+        return function () {
+          execInfo.result = target.apply(ctx, args)
+        }
+      }
+    })()
+
     runHooks(hookMethod.beforeHooks, 'before')
 
     if (hangUpHooks.length || replaceHooks.length) {
@@ -93,14 +106,14 @@ const hookJs = {
     } else {
       if (errorHooks.length) {
         try {
-          execInfo.result = target.apply(ctx, args)
+          runTarget()
         } catch (err) {
           execInfo.error = err
           runHooks(errorHooks, 'error')
           throw err
         }
       } else {
-        execInfo.result = target.apply(ctx, args)
+        runTarget()
       }
     }
 
@@ -121,7 +134,7 @@ const hookJs = {
     return execInfo.result
   },
   /* 使用代理进行hook比直接运行originMethod.apply的错误率更低，但性能也会稍差些 */
-  _proxyMethodcGenerator (parentObj, methodName, originMethod, context, noProxy, proxyHandler) {
+  _proxyMethodcGenerator (parentObj, methodName, originMethod, classHook, context, noProxy, proxyHandler) {
     const t = this
     let hookMethod = null
 
@@ -145,17 +158,23 @@ const hookJs = {
     if (!Proxy || noProxy) {
       context = context || parentObj
       hookMethod = function () {
-        return t._runHooks(parentObj, methodName, originMethod, hookMethod, originMethod, context, arguments)
+        return t._runHooks(parentObj, methodName, originMethod, hookMethod, originMethod, context, arguments, classHook)
       }
     } else {
       /* 注意：使用Proxy代理，hookMethod和originMethod将共用同一对象 */
-      hookMethod = new Proxy(originMethod, {
-        apply (target, ctx, args) {
+      const handler = { ...proxyHandler }
+      if (classHook) {
+        context = context || parentObj
+        handler.construct = function (target, args, newTarget) {
+          return t._runHooks(parentObj, methodName, originMethod, hookMethod, target, context, args)
+        }
+      } else {
+        handler.apply = function (target, ctx, args) {
           ctx = context || ctx
           return t._runHooks(parentObj, methodName, originMethod, hookMethod, target, ctx, args)
-        },
-        ...proxyHandler
-      })
+        }
+      }
+      hookMethod = new Proxy(originMethod, handler)
     }
 
     hookMethod.originMethod = originMethod
@@ -235,12 +254,13 @@ const hookJs = {
    * @param hookMethods {Object|Array|RegExp|string} -必选 被hook函数的函数名或函数名的匹配规则
    * @param fn {Function} -必选 hook之后的回调方法
    * @param type {String} -可选 默认before，指定运行hook函数回调的时机，可选字符串：before、after、replace、error、hangUp
+   * @param classHook {Boolean} -可选 默认false，指定是否为针对new（class）操作的hook
    * @param context {Object} -可选 指定运行被hook函数时的上下文对象
    * @param proxyHandler {Object} -可选 默认使用的是Proxy的apply handler进行hook，如果你有特殊需求也可以配置自己的handler以实现更复杂的功能
    * @param noProxy {Boolean} -可选 默认false，不使用Proxy进行hook，以获得更高性能，但也意味着通用性更差些，对于要hook HTMLElement.prototype、EventTarget.prototype这些对象里面的非实例的函数往往会失败而导致被hook函数执行出错
    * @returns {boolean}
    */
-  hook (parentObj, hookMethods, fn, type, context, proxyHandler, noProxy) {
+  hook (parentObj, hookMethods, fn, type, classHook, context, proxyHandler, noProxy) {
     type = type || 'before'
 
     if (!util.isRef(parentObj) || !util.isFn(fn) || !hookMethods) {
@@ -264,7 +284,7 @@ const hookJs = {
         return false
       }
 
-      hookMethod = t._proxyMethodcGenerator(parentObj, methodName, originMethod, context, proxyHandler, noProxy)
+      hookMethod = t._proxyMethodcGenerator(parentObj, methodName, originMethod, classHook, context, proxyHandler, noProxy)
 
       /* 使用hookMethod接管需要被hook的方法 */
       if (parentObj[methodName] !== hookMethod) {
@@ -343,24 +363,24 @@ const hookJs = {
     })
   },
   /* 源函数运行前的hook */
-  before (obj, hookMethods, fn, context) {
-    return this.hook(obj, hookMethods, fn, 'before', context)
+  before (obj, hookMethods, fn, classHook, context) {
+    return this.hook(obj, hookMethods, fn, 'before', classHook, context)
   },
   /* 源函数运行后的hook */
-  after (obj, hookMethods, fn, context) {
-    return this.hook(obj, hookMethods, fn, 'after', context)
+  after (obj, hookMethods, fn, classHook, context) {
+    return this.hook(obj, hookMethods, fn, 'after', classHook, context)
   },
   /* 替换掉要hook的函数，不再运行源函数，换成运行其他逻辑 */
-  replace (obj, hookMethods, fn, context) {
-    return this.hook(obj, hookMethods, fn, 'replace', context)
+  replace (obj, hookMethods, fn, classHook, context) {
+    return this.hook(obj, hookMethods, fn, 'replace', classHook, context)
   },
   /* 源函数运行出错时的hook */
-  error (obj, hookMethods, fn, context) {
-    return this.hook(obj, hookMethods, fn, 'error', context)
+  error (obj, hookMethods, fn, classHook, context) {
+    return this.hook(obj, hookMethods, fn, 'error', classHook, context)
   },
   /* 底层实现逻辑与replace一样，都是替换掉要hook的函数，不再运行源函数，只不过是为了明确语义，将源函数挂起不再执行，原则上也不再执行其他逻辑，如果要执行其他逻辑请使用replace hook */
-  hangUp (obj, hookMethods, fn, context) {
-    return this.hook(obj, hookMethods, fn, 'hangUp', context)
+  hangUp (obj, hookMethods, fn, classHook, context) {
+    return this.hook(obj, hookMethods, fn, 'hangUp', classHook, context)
   }
 }
 

@@ -113,7 +113,7 @@ describe('hookJs单测', () => {
     ['before', 'after', 'replace', 'error', 'hangUp'].forEach(type => {
       hookJs.hook(console, 'info', (args) => {
         console.log('noProxy hook')
-      }, type, null, {}, true)
+      }, type, false, null, {}, true)
     })
 
     expect(console.info).not.throw()
