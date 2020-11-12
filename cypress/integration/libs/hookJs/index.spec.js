@@ -181,6 +181,79 @@ describe('hookJs单测', () => {
     })
   })
 
+  it('取消指定类型的hook操作', () => {
+    const result = {
+      before: 0,
+      after: 0
+    }
+    hookJs.before(console, 'info', () => {
+      result.before += 1
+    })
+
+    hookJs.after(console, 'info', () => {
+      result.after += 1
+    })
+
+    console.info()
+
+    expect(result.before).equal(1)
+    expect(result.after).equal(1)
+    hookJs.unHook(console, 'info', 'after')
+
+    console.info()
+    expect(result.before).equal(2)
+    expect(result.after).not.equal(2)
+
+    hookJs.unHook(console, 'info', 'before')
+
+    console.info()
+    expect(result.before).equal(2)
+    expect(result.after).not.equal(2)
+    expect(console.info).to.property('originMethod')
+    expect(console.info).to.property('hookMethod')
+    expect(console.info).not.eql(console.info.originMethod)
+
+    hookJs.unHook(console, 'info')
+    expect(console.info).not.property('originMethod')
+    expect(console.info).not.property('hookMethod')
+  })
+
+  it('取消指定类型和具体函数的hook操作', () => {
+    const result = {
+      before: 0,
+      after: 0,
+      hookHandler: 0
+    }
+
+    const hookHandler = function () {
+      result.hookHandler += 1
+    }
+
+    hookJs.before(console, 'info', hookHandler)
+
+    hookJs.before(console, 'info', () => {
+      result.before += 1
+    })
+
+    hookJs.after(console, 'info', () => {
+      result.after += 1
+    })
+
+    console.info()
+    expect(result.before).equal(1)
+    expect(result.after).equal(1)
+    expect(result.hookHandler).equal(1)
+
+    hookJs.unHook(console, 'info', 'before', hookHandler)
+
+    console.info()
+    expect(result.before).equal(2)
+    expect(result.after).equal(2)
+    expect(result.hookHandler).not.equal(2)
+
+    hookJs.unHook(console, 'info')
+  })
+
   it('classHook测试', () => {
     let result = false
 
