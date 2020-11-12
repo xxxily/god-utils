@@ -9,6 +9,8 @@
 
 const win = typeof window === 'undefined' ? global : window
 const toStr = Function.prototype.call.bind(Object.prototype.toString)
+/* 特殊场景，如果把Boolean也hook了，很容易导致调用溢出，所以是需要使用原生Boolean */
+const toBoolean = Boolean.originMethod ? Boolean.originMethod : Boolean
 const util = {
   toStr,
   isObj: obj => toStr(obj) === '[object Object]',
@@ -20,6 +22,7 @@ const util = {
   isPromise: obj => toStr(obj) === '[object Promise]',
   firstUpperCase: str => str.replace(/^\S/, s => s.toUpperCase()),
   toArr: arg => Array.from(Array.isArray(arg) ? arg : [arg]),
+
   debug: {
     log () {
       let log = win.console.log
@@ -40,7 +43,7 @@ const util = {
 }
 
 const hookJs = {
-  _addHook (hookMethod, fn, type) {
+  _addHook (hookMethod, fn, type, classHook) {
     const hookKeyName = type + 'Hooks'
     if (!hookMethod[hookKeyName]) {
       hookMethod[hookKeyName] = []
@@ -56,6 +59,7 @@ const hookJs = {
     }
 
     if (!hasSameHook) {
+      if (classHook) { fn.classHook = true }
       hookMethod[hookKeyName].push(fn)
     }
   },
@@ -74,7 +78,7 @@ const hookJs = {
       execInfo.type = type || ''
       if (Array.isArray(hooks)) {
         hooks.forEach(fn => {
-          if (util.isFn(fn)) {
+          if (util.isFn(fn) && classHook === fn.classHook) {
             fn(args, parentObj, methodName, originMethod, execInfo, ctx)
           }
         })
@@ -163,10 +167,12 @@ const hookJs = {
     } else {
       /* 注意：使用Proxy代理，hookMethod和originMethod将共用同一对象 */
       const handler = { ...proxyHandler }
+
+      /* 下面的写法确定了proxyHandler是无法覆盖construct和apply操作的 */
       if (classHook) {
-        context = context || parentObj
         handler.construct = function (target, args, newTarget) {
-          return t._runHooks(parentObj, methodName, originMethod, hookMethod, target, context, args, classHook)
+          context = context || parentObj
+          return t._runHooks(parentObj, methodName, originMethod, hookMethod, target, context, args, true)
         }
       } else {
         handler.apply = function (target, ctx, args) {
@@ -174,12 +180,14 @@ const hookJs = {
           return t._runHooks(parentObj, methodName, originMethod, hookMethod, target, ctx, args)
         }
       }
+
       hookMethod = new Proxy(originMethod, handler)
     }
 
     hookMethod.originMethod = originMethod
     originMethod.hookMethod = hookMethod
     hookMethod.isHook = true
+    hookMethod.isClassHook = classHook || false
 
     util.debug.log(`[hook method] ${util.toStr(parentObj)} ${methodName}`)
 
@@ -261,6 +269,7 @@ const hookJs = {
    * @returns {boolean}
    */
   hook (parentObj, hookMethods, fn, type, classHook, context, proxyHandler, noProxy) {
+    classHook = toBoolean(classHook)
     type = type || 'before'
 
     if (!util.isRef(parentObj) || !util.isFn(fn) || !hookMethods) {
@@ -286,17 +295,23 @@ const hookJs = {
 
       hookMethod = t._proxyMethodcGenerator(parentObj, methodName, originMethod, classHook, context, proxyHandler, noProxy)
 
+      if (hookMethod.isClassHook !== classHook) {
+        util.debug.log(`${util.toStr(parentObj)} [${methodName}] Cannot support functions hook and classes hook at the same time `)
+        return false
+      }
+
       /* 使用hookMethod接管需要被hook的方法 */
       if (parentObj[methodName] !== hookMethod) {
         parentObj[methodName] = hookMethod
       }
 
-      t._addHook(hookMethod, fn, type)
+      t._addHook(hookMethod, fn, type, classHook)
     })
   },
 
-  hookClass (parentObj, hookMethods, proxyHandler) {
-    //
+  /* 专门针对new操作的hook，本质上是hook函数的别名，可以少传classHook这个参数，并且明确语义 */
+  hookClass (parentObj, hookMethods, fn, type, context, proxyHandler, noProxy) {
+    return this.hook(parentObj, hookMethods, fn, type, true, context, proxyHandler, noProxy)
   },
 
   /**
@@ -360,6 +375,7 @@ const hookJs = {
           delete parentObj[methodName].originMethod
           delete parentObj[methodName].hookMethod
           delete parentObj[methodName].isHook
+          delete parentObj[methodName].isClassHook
           util.debug.log(`[unHook method] ${util.toStr(parentObj)} ${methodName}`)
         }
       }

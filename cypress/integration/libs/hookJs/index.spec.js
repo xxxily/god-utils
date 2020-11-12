@@ -122,11 +122,12 @@ describe('hookJs单测', () => {
     hookJs.unHook(console, 'info')
   })
 
-  it.skip('TODO: 修改运行结果', () => {
-    hookJs.hook(Math, 'min', (args) => {
-      args[1] = 0.0001
-    }, '')
-    expect(Math.min(2, 1)).to.equal(1)
+  it('修改运行结果', () => {
+    /* 在after hook里通过修改execInfo下的result来改变运行结果 */
+    hookJs.hook(Math, 'min', (args, parentObj, methodName, originMethod, execInfo, ctx) => {
+      execInfo.result = 10000
+    }, 'after')
+    expect(Math.min(2, 1)).to.equal(10000)
     hookJs.unHook(Math, 'min')
   })
 
@@ -161,17 +162,54 @@ describe('hookJs单测', () => {
     })
   })
 
-  it.only('classHook测试', () => {
+  it('classHook测试', () => {
     let result = false
-    hookJs.hook(window, 'XMLHttpRequest', () => {
+
+    hookJs.hookClass(window, 'XMLHttpRequest', () => {
       result = true
-    }, '', true)
+    })
 
     const xhr = new XMLHttpRequest()
 
     expect(result).to.equal(true)
     expect(XMLHttpRequest).have.property('originMethod')
     expect(xhr).not.have.property('originMethod')
+
+    hookJs.unHook(window, 'XMLHttpRequest')
+  })
+
+  it('funcHook和classHook互斥测试', () => {
+    let result = false
+    window.HookTest = function () {}
+    hookJs.hook(window, 'HookTest', () => {
+      result = true
+    })
+
+    hookJs.hookClass(window, 'HookTest', () => {
+      result = true
+    })
+
+    let hookTestInstance = new window.HookTest()
+
+    /* 当funcHook和classHook同时hook一个对象时只有前一个hook能生效，不支持同时hook */
+    expect(result).to.equal(false)
+    expect(window.HookTest.isClassHook).to.equal(false)
+    expect(window.HookTest).have.property('originMethod')
+    expect(hookTestInstance).not.have.property('originMethod')
+    window.HookTest()
+    expect(result).to.equal(true)
+
+    /* funcHook被彻底unHook后能修改为classHook */
+    hookJs.unHook(window, 'HookTest')
+    hookJs.hookClass(window, 'HookTest', () => {
+      result = 'classHook'
+    })
+    expect(window.HookTest.isClassHook).to.equal(true)
+    hookTestInstance = new window.HookTest()
+    expect(hookTestInstance).not.have.property('originMethod')
+    expect(result).to.equal('classHook')
+
+    hookJs.unHook(window, 'HookTest')
   })
 })
 
