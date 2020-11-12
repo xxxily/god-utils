@@ -109,6 +109,15 @@ describe('hookJs单测', () => {
     hookJs.unHook(Math, 'min')
   })
 
+  it('修改运行结果', () => {
+    /* 在after hook里通过修改execInfo下的result来改变运行结果 */
+    hookJs.hook(Math, 'min', (args, parentObj, methodName, originMethod, execInfo, ctx) => {
+      execInfo.result = 10000
+    }, 'after')
+    expect(Math.min(2, 1)).to.equal(10000)
+    hookJs.unHook(Math, 'min')
+  })
+
   it('非代理模式的hook', () => {
     ['before', 'after', 'replace', 'error', 'hangUp'].forEach(type => {
       hookJs.hook(console, 'info', (args) => {
@@ -122,13 +131,23 @@ describe('hookJs单测', () => {
     hookJs.unHook(console, 'info')
   })
 
-  it('修改运行结果', () => {
-    /* 在after hook里通过修改execInfo下的result来改变运行结果 */
-    hookJs.hook(Math, 'min', (args, parentObj, methodName, originMethod, execInfo, ctx) => {
-      execInfo.result = 10000
-    }, 'after')
-    expect(Math.min(2, 1)).to.equal(10000)
-    hookJs.unHook(Math, 'min')
+  it('对writable为false的函数进行hook', () => {
+    const obj = Object.defineProperty({}, 'hookTest', {
+      value: function () {},
+      writable: false,
+      /* configurable 必须定义为true，否则默认为false，则无法进行hook */
+      configurable: true
+    })
+
+    let result = false
+
+    hookJs.hook(obj, 'hookTest', () => {
+      result = true
+    })
+
+    expect(result).to.equal(false)
+    obj.hookTest()
+    expect(result).to.equal(true)
   })
 
   it('hook整个window对象', () => {

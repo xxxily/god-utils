@@ -285,6 +285,11 @@ const hookJs = {
         return false
       }
 
+      const descriptor = Object.getOwnPropertyDescriptor(parentObj, methodName)
+      if (descriptor && descriptor.writable === false) {
+        Object.defineProperty(parentObj, methodName, { writable: true })
+      }
+
       const originMethod = parentObj[methodName]
       let hookMethod = null
 
