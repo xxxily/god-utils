@@ -241,6 +241,39 @@ class Debug {
 
 var Debug$1 = new Debug();
 
+/**
+ * 由于tampermonkey对window对象进行了封装，我们实际访问到的window并非页面真实的window
+ * 这就导致了如果我们需要将某些对象挂载到页面的window进行调试的时候就无法挂载了
+ * 所以必须使用特殊手段才能访问到页面真实的window对象，于是就有了下面这个函数
+ * @returns {Promise<void>}
+ */
+async function getPageWindow () {
+  return new Promise(function (resolve, reject) {
+    if (window._pageWindow) {
+      return resolve(window._pageWindow)
+    }
+
+    const listenEventList = ['load', 'mousemove', 'scroll', 'get-page-window-event'];
+
+    function getWin (event) {
+      window._pageWindow = this;
+      // debug.log('getPageWindow succeed', event)
+      listenEventList.forEach(eventType => {
+        window.removeEventListener(eventType, getWin, true);
+      });
+      resolve(window._pageWindow);
+    }
+
+    listenEventList.forEach(eventType => {
+      window.addEventListener(eventType, getWin, true);
+    });
+
+    /* 自行派发事件以便用最短的时候获得pageWindow对象 */
+    window.dispatchEvent(new window.Event('get-page-window-event'));
+  })
+}
+getPageWindow();
+
 /* 强制标识当前处于调试模式 */
 window._debugMode_ = true;
 const debug = Debug$1.create('h5player message:');
@@ -265,6 +298,19 @@ localStorage.setItem = function (key, newValue) {
 
   orignalLocalStorageSetItem.apply(this, arguments);
 };
+
+/* 防止解析出错的jsonParse */
+function jsonParse (str) {
+  let result = null;
+  try {
+    result = JSON.parse(str);
+  } catch (e) {
+    result = {};
+    console.error(e);
+  }
+  result = result || {};
+  return result
+}
 
 /**
  * 匹配某个URL字段，然后运行对应的callback
@@ -606,10 +652,39 @@ const taskMap = [
   }
 ];
 
+/* 自动刷新页面 */
+function autoRefresh (timeout) {
+  const conf = jsonParse(localStorage.getItem('_autoRefreshConfig_'));
+  const urlId = encodeURIComponent(location.href);
+
+  if (timeout === -1) {
+    /* 取消页面自动刷新 */
+    delete conf[urlId];
+    localStorage.setItem('_autoRefreshConfig_', JSON.stringify(conf));
+    return true
+  } else if (typeof timeout === 'number') {
+    /* 设置自动刷新 */
+    conf[urlId] = {
+      timeout,
+      refreshCount: 0
+    };
+    localStorage.setItem('_autoRefreshConfig_', JSON.stringify(conf));
+  }
+
+  /* 执行自动刷新 */
+  if (conf[urlId] && conf[urlId].timeout) {
+    setTimeout(async function () {
+      conf[urlId].refreshCount += 1;
+      localStorage.setItem('_autoRefreshConfig_', JSON.stringify(conf));
+      window.location.reload();
+    }, conf[urlId].timeout);
+  }
+}
+
 /**
  * 脚本入口
  */
-function init () {
+async function init () {
   if (!taskMap || taskMap.length === 0) {
     console.log('没有要执行的任务队列！');
     return false
@@ -622,5 +697,8 @@ function init () {
       matchAndRun(item.match, item.run, item);
     }
   }
+
+  const win = await getPageWindow();
+  win._autoRefresh_ = autoRefresh;
 }
 init();

@@ -4,6 +4,7 @@ import ready from '../../libs/utils/ready'
 import attrObserver from '../../libs/utils/attrObserver'
 import millisecondToDate from '../../libs/utils/millisecondToDate'
 import Debug from '../../libs/utils/Debug'
+import { getPageWindow } from '../common/getPageWindow'
 
 /* 强制标识当前处于调试模式 */
 window._debugMode_ = true
@@ -28,6 +29,19 @@ localStorage.setItem = function (key, newValue) {
   }
 
   orignalLocalStorageSetItem.apply(this, arguments)
+}
+
+/* 防止解析出错的jsonParse */
+function jsonParse (str) {
+  let result = null
+  try {
+    result = JSON.parse(str)
+  } catch (e) {
+    result = {}
+    console.error(e)
+  }
+  result = result || {}
+  return result
 }
 
 /**
@@ -370,10 +384,39 @@ const taskMap = [
   }
 ]
 
+/* 自动刷新页面 */
+function autoRefresh (timeout) {
+  const conf = jsonParse(localStorage.getItem('_autoRefreshConfig_'))
+  const urlId = encodeURIComponent(location.href)
+
+  if (timeout === -1) {
+    /* 取消页面自动刷新 */
+    delete conf[urlId]
+    localStorage.setItem('_autoRefreshConfig_', JSON.stringify(conf))
+    return true
+  } else if (typeof timeout === 'number') {
+    /* 设置自动刷新 */
+    conf[urlId] = {
+      timeout,
+      refreshCount: 0
+    }
+    localStorage.setItem('_autoRefreshConfig_', JSON.stringify(conf))
+  }
+
+  /* 执行自动刷新 */
+  if (conf[urlId] && conf[urlId].timeout) {
+    setTimeout(async function () {
+      conf[urlId].refreshCount += 1
+      localStorage.setItem('_autoRefreshConfig_', JSON.stringify(conf))
+      window.location.reload()
+    }, conf[urlId].timeout)
+  }
+}
+
 /**
  * 脚本入口
  */
-function init () {
+async function init () {
   if (!taskMap || taskMap.length === 0) {
     console.log('没有要执行的任务队列！')
     return false
@@ -386,5 +429,8 @@ function init () {
       matchAndRun(item.match, item.run, item)
     }
   }
+
+  const win = await getPageWindow()
+  win._autoRefresh_ = autoRefresh
 }
 init()
