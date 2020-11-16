@@ -7,6 +7,17 @@
  * @github       https://github.com/xxxily
  */
 
-const ajaxHook = {}
+import hookJs from './index'
+import InterceptorManager from '../../libs/InterceptorManager'
+
+hookJs.hookClass(window, 'XMLHttpRequest', (args, parentObj, methodName, originMethod, execInfo) => {
+  // execInfo.result
+}, 'aftet')
+
+function ajaxHook () {}
+ajaxHook.prototype.interceptors = {
+  response: new InterceptorManager(),
+  request: new InterceptorManager()
+}
 
 export default ajaxHook

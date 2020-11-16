@@ -1,16 +1,5 @@
 import hookJs from '../../../../src/libs/hookJs/index'
-const $ = Cypress.$
-const $dom = selecter => $(document.querySelectorAll(selecter))
-const toStr = Function.prototype.call.bind(Object.prototype.toString)
-const isObj = obj => toStr(obj) === '[object Object]'
-const isFn = obj => obj instanceof Function
-
-function getAllKeys (obj) {
-  const tmpArr = []
-  for (const key in obj) { tmpArr.push(key) }
-  const allKeys = Array.from(new Set(tmpArr.concat(Reflect.ownKeys(obj))))
-  return allKeys
-}
+import { $dom, toStr, isObj, isFn, getAllKeys } from '../../cyUtils'
 
 describe('hookJs单测', () => {
   before(() => {
