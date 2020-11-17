@@ -403,6 +403,7 @@ function autoRefresh (timeout, selector) {
     /* 取消页面自动刷新 */
     delete conf[urlId]
     localStorage.setItem('_autoRefreshConfig_', JSON.stringify(conf))
+    clearTimeout(window._autoRefreshTimer_)
     return true
   } else if (typeof timeout === 'number') {
     /* 设置自动刷新 */
@@ -412,6 +413,7 @@ function autoRefresh (timeout, selector) {
       selector: selector || ''
     }
     localStorage.setItem('_autoRefreshConfig_', JSON.stringify(conf))
+    clearTimeout(window._autoRefreshTimer_)
   }
 
   /* 执行自动刷新 */
@@ -423,7 +425,7 @@ function autoRefresh (timeout, selector) {
       })
     }
 
-    setTimeout(async function () {
+    window._autoRefreshTimer_ = setTimeout(async function () {
       if (selectorReady === true) {
         return true
       }
