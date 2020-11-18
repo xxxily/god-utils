@@ -705,6 +705,23 @@ function autoRefresh (timeout, selector) {
   }
 }
 
+/* 增加自动刷新功能的可视化操作按钮 */
+monkeyMenu.on('自动刷新页面', () => {
+  let timeout = prompt('设置刷新间隔/单位秒（-1表示取消刷新）', 10);
+  timeout = Number(timeout);
+
+  if (Number.isNaN(timeout)) {
+    alert('请输入正确的时间间隔');
+    return false
+  }
+
+  if (timeout >= 0) {
+    autoRefresh(timeout * 1000);
+  } else {
+    autoRefresh(timeout);
+  }
+});
+
 /**
  * 脚本入口
  */
