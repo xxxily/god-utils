@@ -1,5 +1,4 @@
-import {proxyHandler, proxyHandlerGenerator} from '../../../src/demo/proxy.demo'
-
+import { proxyHandler, proxyHandlerGenerator } from '../../../src/demo/proxy.demo'
 
 describe('proxy.demo单测', () => {
   before(() => {
@@ -13,8 +12,8 @@ describe('proxy.demo单测', () => {
   })
 
   it('基本调用', () => {
-    var win = new Proxy(window, proxyHandler)
-    var win2 = new Proxy(window, proxyHandlerGenerator())
+    const win = new Proxy(window, proxyHandler)
+    const win2 = new Proxy(window, proxyHandlerGenerator())
     // expect(win.alert).to.not.equal(win2.alert)
 
     var xhr = new Proxy(XMLHttpRequest, proxyHandlerGenerator())

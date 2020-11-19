@@ -20,11 +20,19 @@ function getAllKeys (obj) {
   return allKeys
 }
 
+/* 计算某个函数的执行时长 */
+function execDuration (fn) {
+  const startTime = Date.now()
+  fn && fn()
+  return Date.now() - startTime
+}
+
 export {
   $,
   $dom,
   toStr,
   isObj,
   isFn,
-  getAllKeys
+  getAllKeys,
+  execDuration
 }
