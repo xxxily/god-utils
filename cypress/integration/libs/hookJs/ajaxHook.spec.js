@@ -16,6 +16,10 @@ describe('ajaxHook单测', () => {
   })
 
   it('基本调用', () => {
-    //
+    ajaxHook.interceptors.request.use(function (config) {
+      //
+    }, function (error) {
+      return Promise.reject(error)
+    })
   })
 })
