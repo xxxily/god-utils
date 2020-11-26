@@ -8,9 +8,11 @@
     "test:summary": "npx nyc report --reporter=text-summary && npx nyc report",
     "rollup": "rollup -w -c config/rollup.config.js",
     "myscript:prod": "npm run rollup --mode-dev --proj-myscript",
+    "sw:prod": "npm run rollup --mode-dev --proj-sw",
     "server": "node bin/staticService/index.js"
   },
   "dependencies": {
+    "localforage": "^1.9.0",
     "vue": "^2.6.11"
   },
   "devDependencies": {

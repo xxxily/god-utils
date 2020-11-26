@@ -21,6 +21,16 @@ const confTree = {
       format: 'es', // 可选值： amd, cjs, es, iife, umd
       name: 'myscript'
     }
+  },
+  sw: {
+    version: '0.0.1',
+    description: 'Service Workers Demo',
+    input: resolve('src/demo/sw.demo.js'),
+    output: {
+      file: resolve('dist/demo/sw.demo.js'),
+      format: 'es', // 可选值： amd, cjs, es, iife, umd
+      name: 'sw'
+    }
   }
 }
 
