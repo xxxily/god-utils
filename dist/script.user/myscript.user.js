@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         个人定制脚本
 // @namespace    http://xxxily.co
-// @version      0.0.11
+// @version      0.0.12
 // @license      LGPLv3
 // @description  个人专用脚本
 // @author       Blaze
@@ -417,9 +417,8 @@ function copyText (text = '') {
 let hasInit = false;
 function init (el) {
   /* 支持直接复制密码域下的密码 */
-  el.addEventListener('keyup', event => {
-    const key = event.key.toLowerCase();
-    if (event.ctrlKey && key === 'c') {
+  el.addEventListener('keydown', event => {
+    if (event.ctrlKey && event.keyCode === 67) {
       setTimeout(() => { copyText(event.target.value); }, 100);
     }
   });

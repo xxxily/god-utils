@@ -14,9 +14,8 @@ import copyText from '../../libs/utils/copyText'
 let hasInit = false
 function init (el) {
   /* 支持直接复制密码域下的密码 */
-  el.addEventListener('keyup', event => {
-    const key = event.key.toLowerCase()
-    if (event.ctrlKey && key === 'c') {
+  el.addEventListener('keydown', event => {
+    if (event.ctrlKey && event.keyCode === 67) {
       setTimeout(() => { copyText(event.target.value) }, 100)
     }
   })
