@@ -4,7 +4,7 @@ import ready from '../../libs/utils/ready'
 import attrObserver from '../../libs/utils/attrObserver'
 import millisecondToDate from '../../libs/utils/millisecondToDate'
 import Debug from '../../libs/utils/Debug'
-import { getPageWindow } from '../common/getPageWindow'
+import autoRefreshMod from './autoRefresh.mod'
 
 /* 强制标识当前处于调试模式 */
 window._debugMode_ = true
@@ -29,19 +29,6 @@ localStorage.setItem = function (key, newValue) {
   }
 
   orignalLocalStorageSetItem.apply(this, arguments)
-}
-
-/* 防止解析出错的jsonParse */
-function jsonParse (str) {
-  let result = null
-  try {
-    result = JSON.parse(str)
-  } catch (e) {
-    result = {}
-    console.error(e)
-  }
-  result = result || {}
-  return result
 }
 
 /**
@@ -200,7 +187,7 @@ const taskMap = [
         const aimDom = document.querySelectorAll('#down_verify_box .btn-orange')
         if (aimDom && aimDom.length === 1) {
           aimDom[0].click()
-          var timeOut = setInterval(function () {
+          const timeOut = setInterval(function () {
             const downA1 = document.getElementById('downA1')
             if (downA1) {
               const link = downA1.href.trim()
@@ -385,76 +372,6 @@ const taskMap = [
 ]
 
 /**
- * 自动刷新页面
- * @param timeout {undefined|number} -可选 当数值为undefined时候，自动读取本地localStorage里的配置执行相关逻辑
- * 当传入数值为-1时，则取消自动刷新逻辑，当为正数时，则表示指定刷新页面的时间间隔
- * @param selector {string} -可选 指定某个选择器，只有页面在指定的时间内依然无法读取到该选择器时才进行刷新
- * @returns {boolean}
- */
-function autoRefresh (timeout, selector) {
-  if (!timeout && !localStorage.getItem('_autoRefreshConfig_')) {
-    return false
-  }
-
-  const conf = jsonParse(localStorage.getItem('_autoRefreshConfig_'))
-  const urlId = encodeURIComponent(location.href)
-
-  if (timeout === -1) {
-    /* 取消页面自动刷新 */
-    delete conf[urlId]
-    localStorage.setItem('_autoRefreshConfig_', JSON.stringify(conf))
-    clearTimeout(window._autoRefreshTimer_)
-    return true
-  } else if (typeof timeout === 'number') {
-    /* 设置自动刷新 */
-    conf[urlId] = {
-      timeout,
-      refreshCount: 0,
-      selector: selector || ''
-    }
-    localStorage.setItem('_autoRefreshConfig_', JSON.stringify(conf))
-    clearTimeout(window._autoRefreshTimer_)
-  }
-
-  /* 执行自动刷新 */
-  if (conf[urlId] && conf[urlId].timeout) {
-    let selectorReady = false
-    if (conf[urlId].selector) {
-      ready(conf[urlId].selector, () => {
-        selectorReady = true
-      })
-    }
-
-    window._autoRefreshTimer_ = setTimeout(async function () {
-      if (selectorReady === true) {
-        return true
-      }
-
-      conf[urlId].refreshCount += 1
-      localStorage.setItem('_autoRefreshConfig_', JSON.stringify(conf))
-      window.location.reload()
-    }, conf[urlId].timeout)
-  }
-}
-
-/* 增加自动刷新功能的可视化操作按钮 */
-monkeyMenu.on('自动刷新页面', () => {
-  let timeout = prompt('设置刷新间隔/单位秒（-1表示取消刷新）', 10)
-  timeout = Number(timeout)
-
-  if (Number.isNaN(timeout)) {
-    alert('请输入正确的时间间隔')
-    return false
-  }
-
-  if (timeout >= 0) {
-    autoRefresh(timeout * 1000)
-  } else {
-    autoRefresh(timeout)
-  }
-})
-
-/**
  * 脚本入口
  */
 async function init () {
@@ -471,41 +388,6 @@ async function init () {
     }
   }
 
-  const win = await getPageWindow()
-  win._autoRefresh_ = autoRefresh
-
-  /* 每个页面都要检查是否需要执行自动刷新逻辑 */
-  autoRefresh()
+  autoRefreshMod.setup()
 }
 init()
-
-if ('serviceWorker' in navigator) {
-  // 开始注册service workers
-  navigator.serviceWorker.register('/sw.user.js', {
-    scope: '/'
-  }).then(function (registration) {
-    console.log('serviceWorker registration success')
-
-    let serviceWorker
-    if (registration.installing) {
-      serviceWorker = registration.installing
-      console.log('serviceWorker installing')
-    } else if (registration.waiting) {
-      serviceWorker = registration.waiting
-      console.log('serviceWorker waiting')
-    } else if (registration.active) {
-      serviceWorker = registration.active
-      console.log('serviceWorker active')
-    }
-    if (serviceWorker) {
-      console.log('serviceWorker state:', serviceWorker.state)
-      serviceWorker.addEventListener('statechange', function (e) {
-        console.log('&emsp;state cheage to:', e.target.state)
-      })
-    }
-  }).catch(function (error) {
-    console.log('serviceWorker registration failed', error)
-  })
-} else {
-  console.log('Your browser does not support service workers')
-}
