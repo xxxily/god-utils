@@ -10,6 +10,7 @@ import { fakeUA, userAgentMap } from './fakeUA'
 import { fakeVisible, fakeHidden } from './fakeVisibilityState'
 import { isInIframe, isInCrossOriginFrame } from './iframe'
 import { throttle } from './throttle'
+import copyText from './copyText'
 
 export {
   ready,
@@ -43,5 +44,6 @@ export {
   fakeHidden,
   isInIframe,
   isInCrossOriginFrame,
-  throttle
+  throttle,
+  copyText
 }
