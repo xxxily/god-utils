@@ -5,6 +5,7 @@ import attrObserver from '../../libs/utils/attrObserver'
 import millisecondToDate from '../../libs/utils/millisecondToDate'
 import Debug from '../../libs/utils/Debug'
 import autoRefreshMod from './autoRefresh.mod'
+import showPasswordMod from './showPassword.mod'
 
 /* 强制标识当前处于调试模式 */
 window._debugMode_ = true
@@ -389,5 +390,6 @@ async function init () {
   }
 
   autoRefreshMod.setup()
+  showPasswordMod.setup()
 }
 init()
