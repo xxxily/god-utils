@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         个人定制脚本
 // @namespace    http://xxxily.co
-// @version      0.0.10
+// @version      0.0.11
 // @license      LGPLv3
 // @description  个人专用脚本
 // @author       Blaze
@@ -378,6 +378,80 @@ var autoRefreshMod = {
   }
 };
 
+/**
+ * 简单的复制内容到剪贴板方法
+ * @param text {String} -必选 要复制到剪贴板的内容
+ * @returns {boolean} 复制成功或失败的状态
+ */
+
+function copyText (text = '') {
+  let sucStatus = false;
+  const input = document.createElement('input');
+
+  input.setAttribute('readonly', 'readonly');
+  input.setAttribute('value', text);
+  document.body.appendChild(input);
+
+  input.setSelectionRange(0, input.value.length);
+  input.select();
+
+  if (document.execCommand && document.execCommand('copy')) {
+    document.execCommand('copy');
+    sucStatus = true;
+  }
+
+  document.body.removeChild(input);
+
+  return sucStatus
+}
+
+/*!
+ * @name         showPassword.mod.js
+ * @description  显示当前页面密码的模块
+ * @version      0.0.1
+ * @author       Blaze
+ * @date         2020/12/8 11:02
+ * @github       https://github.com/xxxily
+ */
+
+let hasInit = false;
+function init (el) {
+  /* 支持直接复制密码域下的密码 */
+  el.addEventListener('keyup', event => {
+    const key = event.key.toLowerCase();
+    if (event.ctrlKey && key === 'c') {
+      setTimeout(() => { copyText(event.target.value); }, 100);
+    }
+  });
+
+  if (hasInit) return
+  hasInit = true;
+
+  monkeyMenu.on('查看密码域内容', () => {
+    const pwdEls = document.querySelectorAll('input[type="password"]');
+    const pwdArr = [];
+
+    pwdEls.forEach(pwdEl => {
+      window.prompt('密码域内容：', pwdEl.value);
+      copyText(pwdEl.value);
+      pwdArr.push({
+        el: pwdEl,
+        pwd: pwdEl.value
+      });
+    });
+
+    console.log('当前页面密码信息：', pwdArr);
+  });
+}
+
+var showPasswordMod = {
+  async setup () {
+    ready('input[type="password"]', (el) => {
+      init(el);
+    });
+  }
+};
+
 /* 强制标识当前处于调试模式 */
 window._debugMode_ = true;
 const debug = Debug$1.create('h5player message:');
@@ -746,7 +820,7 @@ const taskMap = [
 /**
  * 脚本入口
  */
-async function init () {
+async function init$1 () {
   if (!taskMap || taskMap.length === 0) {
     console.log('没有要执行的任务队列！');
     return false
@@ -761,5 +835,6 @@ async function init () {
   }
 
   autoRefreshMod.setup();
+  showPasswordMod.setup();
 }
-init();
+init$1();

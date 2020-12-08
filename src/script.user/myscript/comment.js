@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         个人定制脚本
 // @namespace    http://xxxily.co
-// @version      0.0.10
+// @version      0.0.11
 // @license      LGPLv3
 // @description  个人专用脚本
 // @author       Blaze
