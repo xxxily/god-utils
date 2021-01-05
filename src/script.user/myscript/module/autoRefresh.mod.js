@@ -7,10 +7,10 @@
  * @github       https://github.com/xxxily
  */
 
-import ready from '../../libs/utils/ready'
-import monkeyMenu from '../common/monkeyMenu'
-import jsonParse from './jsonParse'
-import { getPageWindow } from '../common/getPageWindow'
+import ready from '../../../libs/utils/ready'
+import monkeyMenu from '../../common/monkeyMenu'
+import jsonParse from '../libs/jsonParse'
+import { getPageWindow } from '../../common/getPageWindow'
 
 /**
  * 自动刷新页面

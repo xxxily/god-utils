@@ -7,9 +7,9 @@
  * @github       https://github.com/xxxily
  */
 
-import monkeyMenu from '../common/monkeyMenu'
-import ready from '../../libs/utils/ready'
-import copyText from '../../libs/utils/copyText'
+import monkeyMenu from '../../common/monkeyMenu'
+import ready from '../../../libs/utils/ready'
+import copyText from '../../../libs/utils/copyText'
 
 let hasInit = false
 function init (el) {

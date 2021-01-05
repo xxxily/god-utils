@@ -1,15 +1,14 @@
 import './comment'
 import monkeyMenu from '../common/monkeyMenu'
 import ready from '../../libs/utils/ready'
-import attrObserver from '../../libs/utils/attrObserver'
 import millisecondToDate from '../../libs/utils/millisecondToDate'
+import { isFunction, isObj } from '../../libs/utils'
 import Debug from '../../libs/utils/Debug'
-import autoRefreshMod from './autoRefresh.mod'
-import showPasswordMod from './showPassword.mod'
+import modList from './module/index'
 
 /* 强制标识当前处于调试模式 */
 window._debugMode_ = true
-const debug = Debug.create('h5player message:')
+const debug = Debug.create('myscript message:')
 
 /* 劫持localStorage.setItem 方法，增加修改监听功能 */
 const orignalLocalStorageSetItem = localStorage.setItem
@@ -78,7 +77,7 @@ function matchAndRun (matchItem, callback, conf) {
 const taskMap = [
   {
     match: 'youtube.com',
-    describe: '跳过youtube广告',
+    describe: '自动跳过youtube广告',
     run: function () {
       ready('.ytp-ad-skip-button', function (element) {
         element.click()
@@ -245,141 +244,25 @@ const taskMap = [
         debug.log('检测到烦人的登录提示弹框，已主动为你关闭，如果又误关闭，请提醒作者优化脚本逻辑，或关掉该脚本')
       })
     }
-  },
-
-  {
-    match: [
-      'youtube.com'
-    ],
-    describe: '记住播放画质',
-    run: function () {
-      ready(['#player-container .ytp-settings-menu'], element => {
-        /* 通过模拟操作获取或设置视频画质 */
-        function ytpQuality (quality) {
-          const qualityResult = []
-          const settingsMenu = document.querySelector('#player-container .ytp-settings-menu')
-          const settingsBtn = document.querySelector('#player-container .ytp-settings-button')
-          if (settingsMenu) {
-            if (settingsMenu.style.display === 'none') {
-              settingsMenu.style.opacity = 0
-              settingsBtn.click()
-            }
-
-            const menuitem = settingsMenu.querySelectorAll('.ytp-panel-menu .ytp-menuitem')
-            /* 选中最后一项 */
-            menuitem[menuitem.length - 1].click()
-
-            const qualityMenuitem = settingsMenu.querySelectorAll('.ytp-quality-menu .ytp-panel-menu .ytp-menuitem')
-            qualityMenuitem.forEach(el => {
-              const txt = el.innerText
-              if (quality && txt.toLowerCase().startsWith(quality)) {
-                el.click()
-                console.log('已设置视频画质：' + txt)
-              }
-              const checked = Boolean(el.getAttribute('aria-checked')) || false
-              qualityResult.push({
-                quality: txt,
-                checked
-              })
-            })
-
-            /* 关闭设置面板 */
-            setTimeout(function () {
-              if (settingsMenu.style.display !== 'none') {
-                settingsBtn.click()
-              }
-              setTimeout(function () {
-                settingsMenu.style.opacity = 1
-              }, 600)
-            }, 0)
-          }
-
-          if (settingsBtn && !qualityResult.length) {
-            console.error('未获取到当前视频页面的画质信息')
-          }
-
-          return qualityResult
-        }
-
-        function getCurYtpQuality () {
-          let curQuality = ''
-          const qualityList = ytpQuality()
-          for (let i = 0; i < qualityList.length; i++) {
-            const item = qualityList[i]
-            if (item.checked) {
-              curQuality = item.quality
-              break
-            }
-          }
-          return curQuality
-        }
-
-        function saveCurYtpQuality () {
-          const settingsMenu = document.querySelector('#player-container .ytp-settings-menu')
-          if (!settingsMenu || settingsMenu.style.display !== 'none' || document.visibilityState !== 'visible') {
-            return false
-          }
-
-          /* 通过自带控制选项保持播放画质 */
-          let localYtpQuality = localStorage.getItem('yt-player-quality')
-          const customYtpQuality = localStorage.getItem('_ytpQuality_')
-
-          if (localYtpQuality) {
-            localYtpQuality = JSON.parse(localYtpQuality)
-            localYtpQuality.expiration = Date.now() + 1000 * 60 * 60 * 24 * 365
-            localStorage.setItem('yt-player-quality', JSON.stringify(localYtpQuality))
-
-            /* 如果当前画质一致则不需要通过模拟操作更新画质 */
-            if (customYtpQuality && localYtpQuality.data.endsWith(customYtpQuality.split('p')[0])) {
-              return true
-            }
-          }
-
-          /* 通过模拟画面保持播放画质 */
-          const curQuality = getCurYtpQuality()
-          if (curQuality && /\d+p/.test(curQuality.toLowerCase())) {
-            localStorage.setItem('_ytpQuality_', curQuality)
-          }
-        }
-        /* 自动记录选定的播放画质 */
-        setInterval(() => {
-          saveCurYtpQuality()
-        }, 1000 * 5)
-
-        function setYtpQualityByLocalStorageVal () {
-          const customYtpQuality = localStorage.getItem('_ytpQuality_')
-          if (customYtpQuality) {
-            const quality = customYtpQuality.toLowerCase().split('p')[0] + 'p'
-            ytpQuality(quality)
-          } else {
-            /* 默认设置为1080p画质 */
-            ytpQuality('1080p')
-            saveCurYtpQuality()
-          }
-        }
-        setYtpQualityByLocalStorageVal()
-
-        /* 视频地址发生改变时重新执行画质设置逻辑 */
-        let pageUrl = location.href
-        attrObserver(['#player-container video'], () => {
-          if (pageUrl !== location.href) {
-            pageUrl = location.href
-            setYtpQualityByLocalStorageVal()
-          }
-        }, ['src'])
-      })
-    }
   }
 ]
 
-/**
- * 脚本入口
- */
-async function init () {
+/* 添加任务配置到TaskMap */
+function addTaskMap (taskConfList) {
+  taskConfList = Array.isArray(taskConfList) ? taskConfList : [taskConfList]
+  taskConfList.forEach(taskConf => {
+    if (isObj(taskConf) && taskConf.match && isFunction(taskConf.run)) {
+      taskMap.push(taskConf)
+    }
+  })
+}
+
+function runTaskMap (taskMap) {
   if (!taskMap || taskMap.length === 0) {
     console.log('没有要执行的任务队列！')
     return false
   }
+
   // 递归处理任务队列
   const taskLen = taskMap.length
   for (let i = 0; i < taskLen; i++) {
@@ -388,8 +271,32 @@ async function init () {
       matchAndRun(item.match, item.run, item)
     }
   }
+}
 
-  autoRefreshMod.setup()
-  showPasswordMod.setup()
+function moduleSetup (mods) {
+  if (!mods) return false
+
+  mods = Array.isArray(mods) ? mods : [mods]
+  mods.forEach(modItem => {
+    if (modItem && isFunction(modItem.setup)) {
+      if (modItem._isSetup_) return false
+
+      modItem.setup(addTaskMap)
+      modItem._isSetup_ = true
+    } else {
+      debug.error('模块安装失败！', modItem)
+    }
+  })
+}
+
+/**
+ * 脚本入口
+ */
+function init () {
+  /* 注册相关模块 */
+  moduleSetup(modList)
+
+  /* 运行任务队列 */
+  runTaskMap(taskMap)
 }
 init()

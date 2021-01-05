@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         个人定制脚本
 // @namespace    http://xxxily.co
-// @version      0.0.12
+// @version      0.1.1
 // @license      LGPLv3
 // @description  个人专用脚本
 // @author       Blaze
@@ -109,40 +109,6 @@ function ready (selector, fn, shadowRoot) {
 }
 
 /**
- * DOM对象属性监听器
- * @param selector {String|Element} -必选 可以是选择器也可以是已存在的dom对象，如果是选择器则会调用ready进行监听
- * @param fn {Function} -必选 属性变化时的回调函数
- * @param attrFilter {String|Array} -可选 指定监听的属性，如果不指定将监听所有属性的变化
- * @param shadowRoot
- */
-function attrObserver (selector, fn, attrFilter, shadowRoot) {
-  if (!selector || !fn) return false
-  function _attrObserver (element) {
-    const MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
-    const observer = new MutationObserver(fn);
-    const observeOpts = {
-      attributes: true,
-      attributeOldValue: true
-    };
-
-    if (attrFilter) {
-      attrFilter = Array.isArray(attrFilter) ? attrFilter : [attrFilter];
-      observeOpts.attributeFilter = attrFilter;
-    }
-
-    observer.observe(element, observeOpts);
-  }
-
-  if (typeof selector === 'string' || Array.isArray(selector)) {
-    ready(selector, element => _attrObserver(element), shadowRoot);
-  } else if (/Element/.test(Object.prototype.toString.call(selector))) {
-    _attrObserver(selector);
-  } else {
-    return false
-  }
-}
-
-/**
  * 将毫秒数转为天/时/分/秒的表达形式，一般用于展示耗时情况
  * @param msd {number} -必选 毫秒数
  * @param retuenDefText -可选 默认出数组信息，true则输出统计结果的默认文本
@@ -192,6 +158,153 @@ function millisecondToDate (msd, retuenDefText) {
   } else {
     return result
   }
+}
+
+/**
+ * DOM对象属性监听器
+ * @param selector {String|Element} -必选 可以是选择器也可以是已存在的dom对象，如果是选择器则会调用ready进行监听
+ * @param fn {Function} -必选 属性变化时的回调函数
+ * @param attrFilter {String|Array} -可选 指定监听的属性，如果不指定将监听所有属性的变化
+ * @param shadowRoot
+ */
+function attrObserver (selector, fn, attrFilter, shadowRoot) {
+  if (!selector || !fn) return false
+  function _attrObserver (element) {
+    const MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+    const observer = new MutationObserver(fn);
+    const observeOpts = {
+      attributes: true,
+      attributeOldValue: true
+    };
+
+    if (attrFilter) {
+      attrFilter = Array.isArray(attrFilter) ? attrFilter : [attrFilter];
+      observeOpts.attributeFilter = attrFilter;
+    }
+
+    observer.observe(element, observeOpts);
+  }
+
+  if (typeof selector === 'string' || Array.isArray(selector)) {
+    ready(selector, element => _attrObserver(element), shadowRoot);
+  } else if (/Element/.test(Object.prototype.toString.call(selector))) {
+    _attrObserver(selector);
+  } else {
+    return false
+  }
+}
+
+/*!
+ * @name         utils.js
+ * @description  数据类型相关的方法
+ * @version      0.0.1
+ * @author       Blaze
+ * @date         22/03/2019 22:46
+ * @github       https://github.com/xxxily
+ */
+
+/**
+ * 准确地获取对象的具体类型 参见：https://www.talkingcoder.com/article/6333557442705696719
+ * @param obj { all } -必选 要判断的对象
+ * @returns {*} 返回判断的具体类型
+ */
+function getType (obj) {
+  if (obj == null) {
+    return String(obj)
+  }
+  return typeof obj === 'object' || typeof obj === 'function'
+    ? (obj.constructor && obj.constructor.name && obj.constructor.name.toLowerCase()) ||
+    /function\s(.+?)\(/.exec(obj.constructor)[1].toLowerCase()
+    : typeof obj
+}
+
+const isType = (obj, typeName) => getType(obj) === typeName;
+const isObj = obj => isType(obj, 'object');
+const isFunction = obj => obj instanceof Function;
+
+/*!
+ * @name         url.js
+ * @description  用于对url进行解析的相关方法
+ * @version      0.0.1
+ * @author       Blaze
+ * @date         27/03/2019 15:52
+ * @github       https://github.com/xxxily
+ */
+
+/**
+ * 参考示例：
+ * https://segmentfault.com/a/1190000006215495
+ * 注意：该方法必须依赖浏览器的DOM对象
+ */
+
+function parseURL (url) {
+  const a = document.createElement('a');
+  a.href = url || window.location.href;
+  return {
+    source: url,
+    protocol: a.protocol.replace(':', ''),
+    host: a.hostname,
+    port: a.port,
+    origin: a.origin,
+    search: a.search,
+    query: a.search,
+    file: (a.pathname.match(/\/([^/?#]+)$/i) || ['', ''])[1],
+    hash: a.hash.replace('#', ''),
+    path: a.pathname.replace(/^([^/])/, '/$1'),
+    relative: (a.href.match(/tps?:\/\/[^/]+(.+)/) || ['', ''])[1],
+    params: (function () {
+      const ret = {};
+      const seg = [];
+      const paramArr = a.search.replace(/^\?/, '').split('&');
+
+      for (let i = 0; i < paramArr.length; i++) {
+        const item = paramArr[i];
+        if (item !== '' && item.indexOf('=')) {
+          seg.push(item);
+        }
+      }
+
+      for (let j = 0; j < seg.length; j++) {
+        const param = seg[j];
+        const idx = param.indexOf('=');
+        const key = param.substring(0, idx);
+        const val = param.substring(idx + 1);
+        if (!key) {
+          ret[val] = null;
+        } else {
+          ret[key] = val;
+        }
+      }
+      return ret
+    })()
+  }
+}
+
+/**
+ * 简单的复制内容到剪贴板方法
+ * @param text {String} -必选 要复制到剪贴板的内容
+ * @returns {boolean} 复制成功或失败的状态
+ */
+
+function copyText (text = '') {
+  let sucStatus = false;
+  const input = document.createElement('input');
+
+  input.setAttribute('readonly', 'readonly');
+  input.setAttribute('value', text);
+  document.body.appendChild(input);
+
+  input.setSelectionRange(0, input.value.length);
+  input.select();
+
+  if (document.execCommand && document.execCommand('copy')) {
+    document.execCommand('copy');
+    sucStatus = true;
+  }
+
+  document.body.removeChild(input);
+
+  return sucStatus
 }
 
 class Debug {
@@ -378,33 +491,6 @@ var autoRefreshMod = {
   }
 };
 
-/**
- * 简单的复制内容到剪贴板方法
- * @param text {String} -必选 要复制到剪贴板的内容
- * @returns {boolean} 复制成功或失败的状态
- */
-
-function copyText (text = '') {
-  let sucStatus = false;
-  const input = document.createElement('input');
-
-  input.setAttribute('readonly', 'readonly');
-  input.setAttribute('value', text);
-  document.body.appendChild(input);
-
-  input.setSelectionRange(0, input.value.length);
-  input.select();
-
-  if (document.execCommand && document.execCommand('copy')) {
-    document.execCommand('copy');
-    sucStatus = true;
-  }
-
-  document.body.removeChild(input);
-
-  return sucStatus
-}
-
 /*!
  * @name         showPassword.mod.js
  * @description  显示当前页面密码的模块
@@ -451,9 +537,212 @@ var showPasswordMod = {
   }
 };
 
+/*!
+ * @name         keepPlayerQuality.mod.js
+ * @description  锁定视频播放画质
+ * @version      0.0.1
+ * @author       Blaze
+ * @date         2021/1/5 11:00
+ * @github       https://github.com/xxxily
+ */
+
+function keepYoutubeQuality () {
+  ready(['#player-container .ytp-settings-menu'], element => {
+    /* 通过模拟操作获取或设置视频画质 */
+    function ytpQuality (quality) {
+      const qualityResult = [];
+      const settingsMenu = document.querySelector('#player-container .ytp-settings-menu');
+      const settingsBtn = document.querySelector('#player-container .ytp-settings-button');
+      if (settingsMenu) {
+        if (settingsMenu.style.display === 'none') {
+          settingsMenu.style.opacity = 0;
+          settingsBtn.click();
+        }
+
+        const menuitem = settingsMenu.querySelectorAll('.ytp-panel-menu .ytp-menuitem');
+        /* 选中最后一项 */
+        menuitem[menuitem.length - 1].click();
+
+        const qualityMenuitem = settingsMenu.querySelectorAll('.ytp-quality-menu .ytp-panel-menu .ytp-menuitem');
+        qualityMenuitem.forEach(el => {
+          const txt = el.innerText;
+          if (quality && txt.toLowerCase().startsWith(quality)) {
+            el.click();
+            console.log('已设置视频画质：' + txt);
+          }
+          const checked = Boolean(el.getAttribute('aria-checked')) || false;
+          qualityResult.push({
+            quality: txt,
+            checked
+          });
+        });
+
+        /* 关闭设置面板 */
+        setTimeout(function () {
+          if (settingsMenu.style.display !== 'none') {
+            settingsBtn.click();
+          }
+          setTimeout(function () {
+            settingsMenu.style.opacity = 1;
+          }, 600);
+        }, 0);
+      }
+
+      if (settingsBtn && !qualityResult.length) {
+        console.error('未获取到当前视频页面的画质信息');
+      }
+
+      return qualityResult
+    }
+
+    function getCurYtpQuality () {
+      let curQuality = '';
+      const qualityList = ytpQuality();
+      for (let i = 0; i < qualityList.length; i++) {
+        const item = qualityList[i];
+        if (item.checked) {
+          curQuality = item.quality;
+          break
+        }
+      }
+      return curQuality
+    }
+
+    function saveCurYtpQuality () {
+      const settingsMenu = document.querySelector('#player-container .ytp-settings-menu');
+      if (!settingsMenu || settingsMenu.style.display !== 'none' || document.visibilityState !== 'visible') {
+        return false
+      }
+
+      /* 通过自带控制选项保持播放画质 */
+      let localYtpQuality = localStorage.getItem('yt-player-quality');
+      const customYtpQuality = localStorage.getItem('_ytpQuality_');
+
+      if (localYtpQuality) {
+        localYtpQuality = JSON.parse(localYtpQuality);
+        localYtpQuality.expiration = Date.now() + 1000 * 60 * 60 * 24 * 365;
+        localStorage.setItem('yt-player-quality', JSON.stringify(localYtpQuality));
+
+        /* 如果当前画质一致则不需要通过模拟操作更新画质 */
+        if (customYtpQuality && localYtpQuality.data.endsWith(customYtpQuality.split('p')[0])) {
+          return true
+        }
+      }
+
+      /* 通过模拟画面保持播放画质 */
+      const curQuality = getCurYtpQuality();
+      if (curQuality && /\d+p/.test(curQuality.toLowerCase())) {
+        localStorage.setItem('_ytpQuality_', curQuality);
+      }
+    }
+    /* 自动记录选定的播放画质 */
+    setInterval(() => {
+      saveCurYtpQuality();
+    }, 1000 * 5);
+
+    function setYtpQualityByLocalStorageVal () {
+      const customYtpQuality = localStorage.getItem('_ytpQuality_');
+      if (customYtpQuality) {
+        const quality = customYtpQuality.toLowerCase().split('p')[0] + 'p';
+        ytpQuality(quality);
+      } else {
+        /* 默认设置为1080p画质 */
+        ytpQuality('1080p');
+        saveCurYtpQuality();
+      }
+    }
+    setYtpQualityByLocalStorageVal();
+
+    /* 视频地址发生改变时重新执行画质设置逻辑 */
+    let pageUrl = location.href;
+    attrObserver(['#player-container video'], () => {
+      if (pageUrl !== location.href) {
+        pageUrl = location.href;
+        setYtpQualityByLocalStorageVal();
+      }
+    }, ['src']);
+  });
+}
+
+const taskConf = {
+  match: [
+    'youtube.com'
+  ],
+  describe: '记住播放画质',
+  run: function () {
+    /* 目前只适配了油管 */
+    keepYoutubeQuality();
+  }
+};
+
+var keepPlayerQualityMod = {
+  setup (addTaskMap) {
+    addTaskMap(taskConf);
+  }
+};
+
+/*!
+ * @name         superparse.mod.js
+ * @description  在线视频下载解析
+ * @version      0.0.1
+ * @author       Blaze
+ * @date         2021/1/5 9:59
+ * @github       https://github.com/xxxily
+ */
+
+const taskConf$1 = {
+  match: [
+    'superparse.com'
+  ],
+  describe: '解析视频下载地址',
+  run: function () {
+    const urlInfo = parseURL(window.top.location.href);
+    if (!urlInfo.params.url) {
+      return false
+    }
+
+    ready('input.form-control', function (el) {
+      el.value = decodeURIComponent(urlInfo.params.url);
+      document.querySelector('.input-group-btn button').click();
+    });
+  }
+};
+
+function addParseBtn () {
+  if (location.host === 'superparse.com') {
+    return false
+  }
+
+  // const supportHost = [
+  //   'twitter.com',
+  //   'youtube.com'
+  // ]
+
+  monkeyMenu.on('使用superparse解析视频地址', () => {
+    const url = encodeURIComponent(window.top.location.href);
+    if (window.GM_openInTab) {
+      window.GM_openInTab('https://superparse.com/zh?url=' + url, true);
+    }
+  });
+}
+
+var superparseMod = {
+  setup (addTaskMap) {
+    addTaskMap(taskConf$1);
+    addParseBtn();
+  }
+};
+
+const modList = [
+  autoRefreshMod,
+  showPasswordMod,
+  keepPlayerQualityMod,
+  superparseMod
+];
+
 /* 强制标识当前处于调试模式 */
 window._debugMode_ = true;
-const debug = Debug$1.create('h5player message:');
+const debug = Debug$1.create('myscript message:');
 
 /* 劫持localStorage.setItem 方法，增加修改监听功能 */
 const orignalLocalStorageSetItem = localStorage.setItem;
@@ -522,7 +811,7 @@ function matchAndRun (matchItem, callback, conf) {
 const taskMap = [
   {
     match: 'youtube.com',
-    describe: '跳过youtube广告',
+    describe: '自动跳过youtube广告',
     run: function () {
       ready('.ytp-ad-skip-button', function (element) {
         element.click();
@@ -689,141 +978,25 @@ const taskMap = [
         debug.log('检测到烦人的登录提示弹框，已主动为你关闭，如果又误关闭，请提醒作者优化脚本逻辑，或关掉该脚本');
       });
     }
-  },
-
-  {
-    match: [
-      'youtube.com'
-    ],
-    describe: '记住播放画质',
-    run: function () {
-      ready(['#player-container .ytp-settings-menu'], element => {
-        /* 通过模拟操作获取或设置视频画质 */
-        function ytpQuality (quality) {
-          const qualityResult = [];
-          const settingsMenu = document.querySelector('#player-container .ytp-settings-menu');
-          const settingsBtn = document.querySelector('#player-container .ytp-settings-button');
-          if (settingsMenu) {
-            if (settingsMenu.style.display === 'none') {
-              settingsMenu.style.opacity = 0;
-              settingsBtn.click();
-            }
-
-            const menuitem = settingsMenu.querySelectorAll('.ytp-panel-menu .ytp-menuitem');
-            /* 选中最后一项 */
-            menuitem[menuitem.length - 1].click();
-
-            const qualityMenuitem = settingsMenu.querySelectorAll('.ytp-quality-menu .ytp-panel-menu .ytp-menuitem');
-            qualityMenuitem.forEach(el => {
-              const txt = el.innerText;
-              if (quality && txt.toLowerCase().startsWith(quality)) {
-                el.click();
-                console.log('已设置视频画质：' + txt);
-              }
-              const checked = Boolean(el.getAttribute('aria-checked')) || false;
-              qualityResult.push({
-                quality: txt,
-                checked
-              });
-            });
-
-            /* 关闭设置面板 */
-            setTimeout(function () {
-              if (settingsMenu.style.display !== 'none') {
-                settingsBtn.click();
-              }
-              setTimeout(function () {
-                settingsMenu.style.opacity = 1;
-              }, 600);
-            }, 0);
-          }
-
-          if (settingsBtn && !qualityResult.length) {
-            console.error('未获取到当前视频页面的画质信息');
-          }
-
-          return qualityResult
-        }
-
-        function getCurYtpQuality () {
-          let curQuality = '';
-          const qualityList = ytpQuality();
-          for (let i = 0; i < qualityList.length; i++) {
-            const item = qualityList[i];
-            if (item.checked) {
-              curQuality = item.quality;
-              break
-            }
-          }
-          return curQuality
-        }
-
-        function saveCurYtpQuality () {
-          const settingsMenu = document.querySelector('#player-container .ytp-settings-menu');
-          if (!settingsMenu || settingsMenu.style.display !== 'none' || document.visibilityState !== 'visible') {
-            return false
-          }
-
-          /* 通过自带控制选项保持播放画质 */
-          let localYtpQuality = localStorage.getItem('yt-player-quality');
-          const customYtpQuality = localStorage.getItem('_ytpQuality_');
-
-          if (localYtpQuality) {
-            localYtpQuality = JSON.parse(localYtpQuality);
-            localYtpQuality.expiration = Date.now() + 1000 * 60 * 60 * 24 * 365;
-            localStorage.setItem('yt-player-quality', JSON.stringify(localYtpQuality));
-
-            /* 如果当前画质一致则不需要通过模拟操作更新画质 */
-            if (customYtpQuality && localYtpQuality.data.endsWith(customYtpQuality.split('p')[0])) {
-              return true
-            }
-          }
-
-          /* 通过模拟画面保持播放画质 */
-          const curQuality = getCurYtpQuality();
-          if (curQuality && /\d+p/.test(curQuality.toLowerCase())) {
-            localStorage.setItem('_ytpQuality_', curQuality);
-          }
-        }
-        /* 自动记录选定的播放画质 */
-        setInterval(() => {
-          saveCurYtpQuality();
-        }, 1000 * 5);
-
-        function setYtpQualityByLocalStorageVal () {
-          const customYtpQuality = localStorage.getItem('_ytpQuality_');
-          if (customYtpQuality) {
-            const quality = customYtpQuality.toLowerCase().split('p')[0] + 'p';
-            ytpQuality(quality);
-          } else {
-            /* 默认设置为1080p画质 */
-            ytpQuality('1080p');
-            saveCurYtpQuality();
-          }
-        }
-        setYtpQualityByLocalStorageVal();
-
-        /* 视频地址发生改变时重新执行画质设置逻辑 */
-        let pageUrl = location.href;
-        attrObserver(['#player-container video'], () => {
-          if (pageUrl !== location.href) {
-            pageUrl = location.href;
-            setYtpQualityByLocalStorageVal();
-          }
-        }, ['src']);
-      });
-    }
   }
 ];
 
-/**
- * 脚本入口
- */
-async function init$1 () {
+/* 添加任务配置到TaskMap */
+function addTaskMap (taskConfList) {
+  taskConfList = Array.isArray(taskConfList) ? taskConfList : [taskConfList];
+  taskConfList.forEach(taskConf => {
+    if (isObj(taskConf) && taskConf.match && isFunction(taskConf.run)) {
+      taskMap.push(taskConf);
+    }
+  });
+}
+
+function runTaskMap (taskMap) {
   if (!taskMap || taskMap.length === 0) {
     console.log('没有要执行的任务队列！');
     return false
   }
+
   // 递归处理任务队列
   const taskLen = taskMap.length;
   for (let i = 0; i < taskLen; i++) {
@@ -832,8 +1005,32 @@ async function init$1 () {
       matchAndRun(item.match, item.run, item);
     }
   }
+}
 
-  autoRefreshMod.setup();
-  showPasswordMod.setup();
+function moduleSetup (mods) {
+  if (!mods) return false
+
+  mods = Array.isArray(mods) ? mods : [mods];
+  mods.forEach(modItem => {
+    if (modItem && isFunction(modItem.setup)) {
+      if (modItem._isSetup_) return false
+
+      modItem.setup(addTaskMap);
+      modItem._isSetup_ = true;
+    } else {
+      debug.error('模块安装失败！', modItem);
+    }
+  });
+}
+
+/**
+ * 脚本入口
+ */
+function init$1 () {
+  /* 注册相关模块 */
+  moduleSetup(modList);
+
+  /* 运行任务队列 */
+  runTaskMap(taskMap);
 }
 init$1();
