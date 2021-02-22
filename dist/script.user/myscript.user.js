@@ -737,6 +737,7 @@ const modList = [
   autoRefreshMod,
   showPasswordMod,
   keepPlayerQualityMod,
+  // searchEnhanceMod,
   superparseMod
 ];
 
