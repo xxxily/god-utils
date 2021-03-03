@@ -1,3 +1,5 @@
+import { isObj, isArr } from './typeof'
+
 class Debug {
   constructor (msg) {
     const t = this
@@ -20,7 +22,7 @@ class Debug {
       error: '#D33F49'
     }
 
-    return function () {
+    const handler = function () {
       if (!window._debugMode_) {
         return false
       }
@@ -36,6 +38,34 @@ class Debug {
       arg.unshift(`%c [${H}:${M}:${S}] ${msg} `)
       window.console[name].apply(window.console, arg)
     }
+
+    /**
+     * 调试复杂数据的辅助函数
+     * 例如将vue的data对象转换回普通对象数据进行输出
+     * 又例如将本身可以解析为对象的字符串转成普通对象数据进行输出
+     */
+    handler.parse = function () {
+      const arg = Array.from(arguments)
+      arg.forEach((val, index) => {
+        if (val) {
+          if (val.__ob__ || isObj(val) || isArr(val)) {
+            try {
+              arg[index] = JSON.parse(JSON.stringify(val))
+            } catch (e) {
+              arg[index] = val
+            }
+          } else if (typeof val === 'string') {
+            const tmpObj = JSON.parse(JSON.stringify(val))
+            if (isObj(tmpObj) || isArr(tmpObj)) {
+              arg[index] = tmpObj
+            }
+          }
+        }
+      })
+      handler.apply(handler, arg)
+    }
+
+    return handler
   }
 
   isDebugMode () {
