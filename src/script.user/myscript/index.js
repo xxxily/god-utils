@@ -244,6 +244,23 @@ const taskMap = [
         debug.log('检测到烦人的登录提示弹框，已主动为你关闭，如果又误关闭，请提醒作者优化脚本逻辑，或关掉该脚本')
       })
     }
+  },
+
+  {
+    match: [
+      'lanhuapp.com'
+    ],
+    describe: '解决蓝湖按键误触问题',
+    run: function () {
+      window.addEventListener('keyup', (event) => {
+        console.log('stop keyup event', event)
+        if (event.ctrlKey && event.key === 'ArrowRight') {
+          event.stopPropagation()
+          event.stopImmediatePropagation()
+          return false
+        }
+      }, true)
+    }
   }
 ]
 

@@ -220,6 +220,7 @@ function getType (obj) {
 
 const isType = (obj, typeName) => getType(obj) === typeName;
 const isObj = obj => isType(obj, 'object');
+const isArr = obj => isType(obj, 'array');
 const isFunction = obj => obj instanceof Function;
 
 /*!
@@ -329,7 +330,7 @@ class Debug {
       error: '#D33F49'
     };
 
-    return function () {
+    const handler = function () {
       if (!window._debugMode_) {
         return false
       }
@@ -344,7 +345,35 @@ class Debug {
       arg.unshift(`color: white; background-color: ${color || bgColorMap[name] || '#95B46A'}`);
       arg.unshift(`%c [${H}:${M}:${S}] ${msg} `);
       window.console[name].apply(window.console, arg);
-    }
+    };
+
+    /**
+     * 调试复杂数据的辅助函数
+     * 例如将vue的data对象转换回普通对象数据进行输出
+     * 又例如将本身可以解析为对象的字符串转成普通对象数据进行输出
+     */
+    handler.parse = function () {
+      const arg = Array.from(arguments);
+      arg.forEach((val, index) => {
+        if (val) {
+          if (val.__ob__ || isObj(val) || isArr(val)) {
+            try {
+              arg[index] = JSON.parse(JSON.stringify(val));
+            } catch (e) {
+              arg[index] = val;
+            }
+          } else if (typeof val === 'string') {
+            const tmpObj = JSON.parse(JSON.stringify(val));
+            if (isObj(tmpObj) || isArr(tmpObj)) {
+              arg[index] = tmpObj;
+            }
+          }
+        }
+      });
+      handler.apply(handler, arg);
+    };
+
+    return handler
   }
 
   isDebugMode () {
@@ -978,6 +1007,23 @@ const taskMap = [
         element.click();
         debug.log('检测到烦人的登录提示弹框，已主动为你关闭，如果又误关闭，请提醒作者优化脚本逻辑，或关掉该脚本');
       });
+    }
+  },
+
+  {
+    match: [
+      'lanhuapp.com'
+    ],
+    describe: '解决蓝湖按键误触问题',
+    run: function () {
+      window.addEventListener('keyup', (event) => {
+        console.log('stop keyup event', event);
+        if (event.ctrlKey && event.key === 'ArrowRight') {
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          return false
+        }
+      }, true);
     }
   }
 ];
