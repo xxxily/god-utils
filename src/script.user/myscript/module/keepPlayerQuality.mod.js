@@ -9,11 +9,61 @@
 
 import ready from '../../../libs/utils/ready'
 import attrObserver from '../../../libs/utils/attrObserver'
+import monkeyMenu from '../../common/monkeyMenu'
+import Debug from '../../../libs/utils/Debug'
+import { quickSort } from '../../../libs/utils/number'
+const debug = Debug.create('myscript message:')
 
 function keepYoutubeQuality () {
+  const youtubeQualitySetting = [
+    {
+      describe: '2160p 画质',
+      value: '2160p'
+    },
+    {
+      describe: '1440p 画质',
+      value: '1440p'
+    },
+    {
+      describe: '1080p 画质',
+      value: '1080p'
+    },
+    {
+      describe: '720p 画质',
+      value: '720p'
+    },
+    {
+      describe: '480p 画质',
+      value: '480p'
+    },
+    {
+      describe: 'auto 画质',
+      value: 'auto'
+    }
+  ]
+
+  const customYtpQuality = localStorage.getItem('_ytpQuality_')
+
+  youtubeQualitySetting.forEach(item => {
+    let menuText = '[YouTube] ' + item.describe
+    if (customYtpQuality && customYtpQuality === item.value) {
+      menuText += ' [ √ ]'
+    }
+
+    /* 生产指定画质菜单 */
+    monkeyMenu.on(menuText, () => {
+      localStorage.setItem('_ytpQuality_', item.value)
+
+      setTimeout(() => {
+        location.reload()
+      }, 1000 * 1)
+    })
+  })
+
   ready(['#player-container .ytp-settings-menu'], element => {
     /* 通过模拟操作获取或设置视频画质 */
-    function ytpQuality (quality) {
+    function ytpQuality (quality, fallback) {
+      let hasSetQuality = false
       const qualityResult = []
       const settingsMenu = document.querySelector('#player-container .ytp-settings-menu')
       const settingsBtn = document.querySelector('#player-container .ytp-settings-button')
@@ -32,14 +82,44 @@ function keepYoutubeQuality () {
           const txt = el.innerText
           if (quality && txt.toLowerCase().startsWith(quality)) {
             el.click()
-            console.log('已设置视频画质：' + txt)
+            debug.log('已设置视频画质：' + txt)
+            hasSetQuality = true
           }
           const checked = Boolean(el.getAttribute('aria-checked')) || false
           qualityResult.push({
             quality: txt,
-            checked
+            checked,
+            el
           })
         })
+
+        /* 如果指定了画质，但是未被设置，说明没法命中指定画质，这时则指定当前可用的最优画质 */
+        if (quality && !hasSetQuality && fallback) {
+          const qNum = Number(quality.toLowerCase().split('p')[0])
+
+          if (qNum) {
+            /* 找出比当前指定画质小的元素 */
+            let tmpArr = []
+            const tmpObj = { }
+            qualityResult.forEach(item => {
+              const curQNum = Number(item.quality.toLowerCase().split('p')[0])
+              if (curQNum < qNum) {
+                tmpArr.push(curQNum)
+                tmpObj[curQNum] = item
+              }
+            })
+            tmpArr = quickSort(tmpArr)
+
+            /* 设置符合当前条件下的最优画质 */
+            const tagItem = tmpObj[tmpArr[tmpArr.length - 1]]
+            if (tagItem && tagItem.el) {
+              tagItem.el.click()
+              hasSetQuality = true
+              debug.log('已设置视频画质：' + tagItem.quality)
+            }
+            // debug.log('---------------：', tmpArr, tmpObj, tagItem)
+          }
+        }
 
         /* 关闭设置面板 */
         setTimeout(function () {
@@ -99,22 +179,20 @@ function keepYoutubeQuality () {
         localStorage.setItem('_ytpQuality_', curQuality)
       }
     }
+
     /* 自动记录选定的播放画质 */
-    setInterval(() => {
-      saveCurYtpQuality()
-    }, 1000 * 5)
+    // setInterval(() => {
+    //   saveCurYtpQuality()
+    // }, 1000 * 5)
 
     function setYtpQualityByLocalStorageVal () {
       const customYtpQuality = localStorage.getItem('_ytpQuality_')
-      if (customYtpQuality) {
+      if (customYtpQuality && customYtpQuality !== 'auto') {
         const quality = customYtpQuality.toLowerCase().split('p')[0] + 'p'
-        ytpQuality(quality)
-      } else {
-        /* 默认设置为1080p画质 */
-        ytpQuality('1080p')
-        saveCurYtpQuality()
+        ytpQuality(quality, true)
       }
     }
+
     setYtpQualityByLocalStorageVal()
 
     /* 视频地址发生改变时重新执行画质设置逻辑 */
