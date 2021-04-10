@@ -223,6 +223,22 @@ const isObj = obj => isType(obj, 'object');
 const isArr = obj => isType(obj, 'array');
 const isFunction = obj => obj instanceof Function;
 
+const quickSort = function (arr) {
+  if (arr.length <= 1) { return arr }
+  const pivotIndex = Math.floor(arr.length / 2);
+  const pivot = arr.splice(pivotIndex, 1)[0];
+  const left = [];
+  const right = [];
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] < pivot) {
+      left.push(arr[i]);
+    } else {
+      right.push(arr[i]);
+    }
+  }
+  return quickSort(left).concat([pivot], quickSort(right))
+};
+
 /*!
  * @name         url.js
  * @description  用于对url进行解析的相关方法
@@ -574,11 +590,58 @@ var showPasswordMod = {
  * @date         2021/1/5 11:00
  * @github       https://github.com/xxxily
  */
+const debug = Debug$1.create('myscript message:');
 
 function keepYoutubeQuality () {
+  const youtubeQualitySetting = [
+    {
+      describe: '2160p 画质',
+      value: '2160p'
+    },
+    {
+      describe: '1440p 画质',
+      value: '1440p'
+    },
+    {
+      describe: '1080p 画质',
+      value: '1080p'
+    },
+    {
+      describe: '720p 画质',
+      value: '720p'
+    },
+    {
+      describe: '480p 画质',
+      value: '480p'
+    },
+    {
+      describe: 'auto 画质',
+      value: 'auto'
+    }
+  ];
+
+  const customYtpQuality = localStorage.getItem('_ytpQuality_');
+
+  youtubeQualitySetting.forEach(item => {
+    let menuText = '[YouTube] ' + item.describe;
+    if (customYtpQuality && customYtpQuality === item.value) {
+      menuText += ' [ √ ]';
+    }
+
+    /* 生产指定画质菜单 */
+    monkeyMenu.on(menuText, () => {
+      localStorage.setItem('_ytpQuality_', item.value);
+
+      setTimeout(() => {
+        location.reload();
+      }, 1000 * 1);
+    });
+  });
+
   ready(['#player-container .ytp-settings-menu'], element => {
     /* 通过模拟操作获取或设置视频画质 */
-    function ytpQuality (quality) {
+    function ytpQuality (quality, fallback) {
+      let hasSetQuality = false;
       const qualityResult = [];
       const settingsMenu = document.querySelector('#player-container .ytp-settings-menu');
       const settingsBtn = document.querySelector('#player-container .ytp-settings-button');
@@ -597,14 +660,44 @@ function keepYoutubeQuality () {
           const txt = el.innerText;
           if (quality && txt.toLowerCase().startsWith(quality)) {
             el.click();
-            console.log('已设置视频画质：' + txt);
+            debug.log('已设置视频画质：' + txt);
+            hasSetQuality = true;
           }
           const checked = Boolean(el.getAttribute('aria-checked')) || false;
           qualityResult.push({
             quality: txt,
-            checked
+            checked,
+            el
           });
         });
+
+        /* 如果指定了画质，但是未被设置，说明没法命中指定画质，这时则指定当前可用的最优画质 */
+        if (quality && !hasSetQuality && fallback) {
+          const qNum = Number(quality.toLowerCase().split('p')[0]);
+
+          if (qNum) {
+            /* 找出比当前指定画质小的元素 */
+            let tmpArr = [];
+            const tmpObj = { };
+            qualityResult.forEach(item => {
+              const curQNum = Number(item.quality.toLowerCase().split('p')[0]);
+              if (curQNum < qNum) {
+                tmpArr.push(curQNum);
+                tmpObj[curQNum] = item;
+              }
+            });
+            tmpArr = quickSort(tmpArr);
+
+            /* 设置符合当前条件下的最优画质 */
+            const tagItem = tmpObj[tmpArr[tmpArr.length - 1]];
+            if (tagItem && tagItem.el) {
+              tagItem.el.click();
+              hasSetQuality = true;
+              debug.log('已设置视频画质：' + tagItem.quality);
+            }
+            // debug.log('---------------：', tmpArr, tmpObj, tagItem)
+          }
+        }
 
         /* 关闭设置面板 */
         setTimeout(function () {
@@ -624,62 +717,19 @@ function keepYoutubeQuality () {
       return qualityResult
     }
 
-    function getCurYtpQuality () {
-      let curQuality = '';
-      const qualityList = ytpQuality();
-      for (let i = 0; i < qualityList.length; i++) {
-        const item = qualityList[i];
-        if (item.checked) {
-          curQuality = item.quality;
-          break
-        }
-      }
-      return curQuality
-    }
-
-    function saveCurYtpQuality () {
-      const settingsMenu = document.querySelector('#player-container .ytp-settings-menu');
-      if (!settingsMenu || settingsMenu.style.display !== 'none' || document.visibilityState !== 'visible') {
-        return false
-      }
-
-      /* 通过自带控制选项保持播放画质 */
-      let localYtpQuality = localStorage.getItem('yt-player-quality');
-      const customYtpQuality = localStorage.getItem('_ytpQuality_');
-
-      if (localYtpQuality) {
-        localYtpQuality = JSON.parse(localYtpQuality);
-        localYtpQuality.expiration = Date.now() + 1000 * 60 * 60 * 24 * 365;
-        localStorage.setItem('yt-player-quality', JSON.stringify(localYtpQuality));
-
-        /* 如果当前画质一致则不需要通过模拟操作更新画质 */
-        if (customYtpQuality && localYtpQuality.data.endsWith(customYtpQuality.split('p')[0])) {
-          return true
-        }
-      }
-
-      /* 通过模拟画面保持播放画质 */
-      const curQuality = getCurYtpQuality();
-      if (curQuality && /\d+p/.test(curQuality.toLowerCase())) {
-        localStorage.setItem('_ytpQuality_', curQuality);
-      }
-    }
     /* 自动记录选定的播放画质 */
-    setInterval(() => {
-      saveCurYtpQuality();
-    }, 1000 * 5);
+    // setInterval(() => {
+    //   saveCurYtpQuality()
+    // }, 1000 * 5)
 
     function setYtpQualityByLocalStorageVal () {
       const customYtpQuality = localStorage.getItem('_ytpQuality_');
-      if (customYtpQuality) {
+      if (customYtpQuality && customYtpQuality !== 'auto') {
         const quality = customYtpQuality.toLowerCase().split('p')[0] + 'p';
-        ytpQuality(quality);
-      } else {
-        /* 默认设置为1080p画质 */
-        ytpQuality('1080p');
-        saveCurYtpQuality();
+        ytpQuality(quality, true);
       }
     }
+
     setYtpQualityByLocalStorageVal();
 
     /* 视频地址发生改变时重新执行画质设置逻辑 */
@@ -772,7 +822,7 @@ const modList = [
 
 /* 强制标识当前处于调试模式 */
 window._debugMode_ = true;
-const debug = Debug$1.create('myscript message:');
+const debug$1 = Debug$1.create('myscript message:');
 
 /* 劫持localStorage.setItem 方法，增加修改监听功能 */
 const orignalLocalStorageSetItem = localStorage.setItem;
@@ -820,9 +870,9 @@ function matchAndRun (matchItem, callback, conf) {
       hasMatchItem = true;
       callback(matchStr, conf);
       if (window !== top) {
-        debug.log(`个人脚本规则在ifram里生效：${conf.describe || ''}`, conf);
+        debug$1.log(`个人脚本规则在ifram里生效：${conf.describe || ''}`, conf);
       } else {
-        debug.log(`个人脚本规则生效：${conf.describe || ''}`, conf);
+        debug$1.log(`个人脚本规则生效：${conf.describe || ''}`, conf);
       }
     }
   });
@@ -1005,7 +1055,7 @@ const taskMap = [
     run: function () {
       ready(['.login-mark', 'div.Modal-backdrop'], element => {
         element.click();
-        debug.log('检测到烦人的登录提示弹框，已主动为你关闭，如果又误关闭，请提醒作者优化脚本逻辑，或关掉该脚本');
+        debug$1.log('检测到烦人的登录提示弹框，已主动为你关闭，如果又误关闭，请提醒作者优化脚本逻辑，或关掉该脚本');
       });
     }
   },
@@ -1065,7 +1115,7 @@ function moduleSetup (mods) {
       modItem.setup(addTaskMap);
       modItem._isSetup_ = true;
     } else {
-      debug.error('模块安装失败！', modItem);
+      debug$1.error('模块安装失败！', modItem);
     }
   });
 }

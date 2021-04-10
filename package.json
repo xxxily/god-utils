@@ -7,6 +7,7 @@
     "cypress:open": "cypress open",
     "test:summary": "npx nyc report --reporter=text-summary && npx nyc report",
     "rollup": "rollup -w -c config/rollup.config.js",
+    "myscript02:prod": "npm run rollup --mode-dev --proj-myscript02",
     "myscript:prod": "npm run rollup --mode-dev --proj-myscript",
     "sw:prod": "npm run rollup --mode-dev --proj-sw",
     "server": "node bin/staticService/index.js"

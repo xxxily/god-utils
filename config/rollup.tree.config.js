@@ -22,6 +22,16 @@ const confTree = {
       name: 'myscript'
     }
   },
+  myscript02: {
+    version: '0.0.1',
+    description: 'myscript02',
+    input: resolve('src/script.user/myscript02/index.js'),
+    output: {
+      file: resolve('dist/script.user/myscript02.user.js'),
+      format: 'es',
+      name: 'myscript02'
+    }
+  },
   sw: {
     version: '0.0.1',
     description: 'Service Workers Demo',

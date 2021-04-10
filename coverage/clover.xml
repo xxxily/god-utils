@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1621239996894" clover="3.2.0">
+  <project timestamp="1621239996894" name="All files">
+    <metrics statements="22" coveredstatements="22" conditionals="16" coveredconditionals="14" methods="5" coveredmethods="5" elements="43" coveredelements="41" complexity="0" loc="22" ncloc="22" packages="13" files="47" classes="47"/>
+    <package name="demo">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="deepClone.demo.js" path="D:/work/github/god-utils/src/demo/deepClone.demo.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="proxy.demo.js" path="D:/work/github/god-utils/src/demo/proxy.demo.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="sw.demo.js" path="D:/work/github/god-utils/src/demo/sw.demo.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="sw.reg.js" path="D:/work/github/god-utils/src/demo/sw.reg.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="libs.FullScreen">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="index.js" path="D:/work/github/god-utils/src/libs/FullScreen/index.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="libs.I18n">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="index.js" path="D:/work/github/god-utils/src/libs/I18n/index.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="libs.InterceptorManager">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="index.js" path="D:/work/github/god-utils/src/libs/InterceptorManager/index.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="utils.js" path="D:/work/github/god-utils/src/libs/InterceptorManager/utils.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="libs.MouseObserver">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="index.js" path="D:/work/github/god-utils/src/libs/MouseObserver/index.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="libs.TCC">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="index.js" path="D:/work/github/god-utils/src/libs/TCC/index.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="libs.hookJs">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="ajaxHook.js" path="D:/work/github/god-utils/src/libs/hookJs/ajaxHook.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="index.js" path="D:/work/github/god-utils/src/libs/hookJs/index.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="libs.utils">
+      <metrics statements="22" coveredstatements="22" conditionals="16" coveredconditionals="14" methods="5" coveredmethods="5"/>
+      <file name="Debug.js" path="D:/work/github/god-utils/src/libs/utils/Debug.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="attrObserver.js" path="D:/work/github/god-utils/src/libs/utils/attrObserver.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="copyText.js" path="D:/work/github/god-utils/src/libs/utils/copyText.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="dom.js" path="D:/work/github/god-utils/src/libs/utils/dom.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="fakeUA.js" path="D:/work/github/god-utils/src/libs/utils/fakeUA.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="fakeVisibilityState.js" path="D:/work/github/god-utils/src/libs/utils/fakeVisibilityState.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="hackAttachShadow.js" path="D:/work/github/god-utils/src/libs/utils/hackAttachShadow.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="hackEventListener.js" path="D:/work/github/god-utils/src/libs/utils/hackEventListener.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="iframe.js" path="D:/work/github/god-utils/src/libs/utils/iframe.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="index.js" path="D:/work/github/god-utils/src/libs/utils/index.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="millisecondToDate.js" path="D:/work/github/god-utils/src/libs/utils/millisecondToDate.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="number.js" path="D:/work/github/god-utils/src/libs/utils/number.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="object.js" path="D:/work/github/god-utils/src/libs/utils/object.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="ready.js" path="D:\work\github\god-utils\src\libs\utils\ready.js">
+        <metrics statements="22" coveredstatements="22" conditionals="16" coveredconditionals="14" methods="5" coveredmethods="5"/>
+        <line num="9" count="5" type="stmt"/>
+        <line num="10" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="11" count="5" type="cond" truecount="1" falsecount="1"/>
+        <line num="12" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="16" count="6" type="stmt"/>
+        <line num="22" count="6" type="cond" truecount="4" falsecount="0"/>
+        <line num="23" count="2" type="stmt"/>
+        <line num="24" count="2" type="stmt"/>
+        <line num="25" count="9" type="stmt"/>
+        <line num="26" count="29" type="stmt"/>
+        <line num="27" count="29" type="stmt"/>
+        <line num="31" count="2" type="stmt"/>
+        <line num="38" count="6" type="stmt"/>
+        <line num="42" count="35" type="stmt"/>
+        <line num="43" count="35" type="stmt"/>
+        <line num="44" count="6" type="stmt"/>
+        <line num="45" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="46" count="6" type="cond" truecount="1" falsecount="1"/>
+        <line num="47" count="6" type="stmt"/>
+        <line num="48" count="6" type="stmt"/>
+        <line num="53" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="54" count="6" type="stmt"/>
+      </file>
+      <file name="ready.js" path="D:/work/github/god-utils/src/libs/utils/ready.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="throttle.js" path="D:/work/github/god-utils/src/libs/utils/throttle.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="typeof.js" path="D:/work/github/god-utils/src/libs/utils/typeof.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="url.js" path="D:/work/github/god-utils/src/libs/utils/url.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="libs.videoCapturer">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="index.js" path="D:/work/github/god-utils/src/libs/videoCapturer/index.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="script.user.common">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="getId.js" path="D:/work/github/god-utils/src/script.user/common/getId.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="getPageWindow.js" path="D:/work/github/god-utils/src/script.user/common/getPageWindow.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="http.js" path="D:/work/github/god-utils/src/script.user/common/http.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="monkeyMenu.js" path="D:/work/github/god-utils/src/script.user/common/monkeyMenu.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="monkeyMsg.js" path="D:/work/github/god-utils/src/script.user/common/monkeyMsg.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="statistics.js" path="D:/work/github/god-utils/src/script.user/common/statistics.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="script.user.myscript">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="comment.js" path="D:/work/github/god-utils/src/script.user/myscript/comment.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="index.js" path="D:/work/github/god-utils/src/script.user/myscript/index.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="script.user.myscript.libs">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="jsonParse.js" path="D:/work/github/god-utils/src/script.user/myscript/libs/jsonParse.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="myTools.js" path="D:/work/github/god-utils/src/script.user/myscript/libs/myTools.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="script.user.myscript.module">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="autoRefresh.mod.js" path="D:/work/github/god-utils/src/script.user/myscript/module/autoRefresh.mod.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="index.js" path="D:/work/github/god-utils/src/script.user/myscript/module/index.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="keepPlayerQuality.mod.js" path="D:/work/github/god-utils/src/script.user/myscript/module/keepPlayerQuality.mod.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="searchEnhance.mod.js" path="D:/work/github/god-utils/src/script.user/myscript/module/searchEnhance.mod.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="showPassword.mod.js" path="D:/work/github/god-utils/src/script.user/myscript/module/showPassword.mod.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="superparse.mod.js" path="D:/work/github/god-utils/src/script.user/myscript/module/superparse.mod.js">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+  </project>
+</coverage>
