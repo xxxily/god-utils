@@ -18,11 +18,11 @@ const taskConf = {
   run: function () {
     const blockList = [
       'trace.qq.com',
-      // 'aegis.qq.com',
-      // 'beacon.qq.com',
-      // 'report.idqqimg.com',
-      // 'tpstelemetry.tencent.com',
-      // 'report.url.cn'
+      'aegis.qq.com',
+      'beacon.qq.com',
+      'report.idqqimg.com',
+      'tpstelemetry.tencent.com',
+      'report.url.cn'
     ]
     blockList.forEach(rule => { add(rule) })
     console.log('腾讯文档无脑上报请求拦截器:', JSON.stringify(getBlockList()))

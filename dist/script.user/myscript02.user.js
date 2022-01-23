@@ -171,54 +171,6 @@ function fetchHook (callback) {
   };
 }
 
-function xhrHook (callback) {
-  if (window._realXhr) {
-    return true
-  }
-
-  window._realXhr = window.XMLHttpRequest;
-
-  window.XMLHttpRequest = function () {
-    const xhr = new window._realXhr();
-
-    const xhrConf = {};
-
-    const realOpen = xhr.open;
-    xhr.open = function () {
-      xhrConf.method = arguments[0];
-      xhrConf.url = arguments[1];
-      xhrConf.async = arguments[2];
-      xhrConf.user = arguments[3];
-      xhrConf.password = arguments[4];
-
-      return realOpen.apply(xhr, arguments)
-    };
-
-    const realSend = xhr.send;
-    xhr.send = function () {
-      if (callback instanceof Function) {
-        const result = callback(xhrConf);
-
-        // 阻止请求
-        if (result === false) {
-          // console.info('[xhrHook block]', arguments)
-          return false
-        }
-      }
-
-      return realSend.apply(xhr, arguments)
-    };
-
-    // xhr.addEventListener('error', function (err) {
-    //   console.error('[xhrHook error]', err)
-    // }, true)
-
-    this.xhr = xhr;
-
-    return xhr
-  };
-}
-
 const blockList = [];
 
 function getBlockList () {
@@ -303,13 +255,13 @@ fetchHook(function (args) {
   }
 });
 
-xhrHook(function (config) {
-  const url = config.url;
-  if (isNeedBlock(url)) {
-    console.error('[xhrHook block]', url);
-    return false
-  }
-});
+// xhrHook(function (config) {
+//   const url = config.url
+//   if (isNeedBlock(url)) {
+//     console.error('[xhrHook block]', url)
+//     return false
+//   }
+// })
 
 // proxy({
 //   onRequest: (config, handler) => {
@@ -339,11 +291,11 @@ const taskConf = {
   run: function () {
     const blockList = [
       'trace.qq.com',
-      // 'aegis.qq.com',
-      // 'beacon.qq.com',
-      // 'report.idqqimg.com',
-      // 'tpstelemetry.tencent.com',
-      // 'report.url.cn'
+      'aegis.qq.com',
+      'beacon.qq.com',
+      'report.idqqimg.com',
+      'tpstelemetry.tencent.com',
+      'report.url.cn'
     ];
     blockList.forEach(rule => { add(rule); });
     console.log('腾讯文档无脑上报请求拦截器:', JSON.stringify(getBlockList()));

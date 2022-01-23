@@ -162,13 +162,13 @@ fetchHook(function (args) {
   }
 })
 
-xhrHook(function (config) {
-  const url = config.url
-  if (isNeedBlock(url)) {
-    console.error('[xhrHook block]', url)
-    return false
-  }
-})
+// xhrHook(function (config) {
+//   const url = config.url
+//   if (isNeedBlock(url)) {
+//     console.error('[xhrHook block]', url)
+//     return false
+//   }
+// })
 
 // proxy({
 //   onRequest: (config, handler) => {
