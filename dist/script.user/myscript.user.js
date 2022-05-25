@@ -546,7 +546,7 @@ var autoRefreshMod = {
  */
 
 let hasInit = false;
-function init (el) {
+function init$1 (el) {
   /* 支持直接复制密码域下的密码 */
   el.addEventListener('keydown', event => {
     if (event.ctrlKey && event.keyCode === 67) {
@@ -577,7 +577,7 @@ function init (el) {
 var showPasswordMod = {
   async setup () {
     ready('input[type="password"]', (el) => {
-      init(el);
+      init$1(el);
     });
   }
 };
@@ -590,7 +590,7 @@ var showPasswordMod = {
  * @date         2021/1/5 11:00
  * @github       https://github.com/xxxily
  */
-const debug = Debug$1.create('myscript message:');
+const debug$1 = Debug$1.create('myscript message:');
 
 function keepYoutubeQuality () {
   const youtubeQualitySetting = [
@@ -660,7 +660,7 @@ function keepYoutubeQuality () {
           const txt = el.innerText;
           if (quality && txt.toLowerCase().startsWith(quality)) {
             el.click();
-            debug.log('已设置视频画质：' + txt);
+            debug$1.log('已设置视频画质：' + txt);
             hasSetQuality = true;
           }
           const checked = Boolean(el.getAttribute('aria-checked')) || false;
@@ -693,7 +693,7 @@ function keepYoutubeQuality () {
             if (tagItem && tagItem.el) {
               tagItem.el.click();
               hasSetQuality = true;
-              debug.log('已设置视频画质：' + tagItem.quality);
+              debug$1.log('已设置视频画质：' + tagItem.quality);
             }
             // debug.log('---------------：', tmpArr, tmpObj, tagItem)
           }
@@ -743,7 +743,7 @@ function keepYoutubeQuality () {
   });
 }
 
-const taskConf = {
+const taskConf$1 = {
   match: [
     'youtube.com'
   ],
@@ -756,7 +756,7 @@ const taskConf = {
 
 var keepPlayerQualityMod = {
   setup (addTaskMap) {
-    addTaskMap(taskConf);
+    addTaskMap(taskConf$1);
   }
 };
 
@@ -769,7 +769,7 @@ var keepPlayerQualityMod = {
  * @github       https://github.com/xxxily
  */
 
-const taskConf$1 = {
+const taskConf = {
   match: [
     'superparse.com'
   ],
@@ -807,7 +807,7 @@ function addParseBtn () {
 
 var superparseMod = {
   setup (addTaskMap) {
-    addTaskMap(taskConf$1);
+    addTaskMap(taskConf);
     addParseBtn();
   }
 };
@@ -820,9 +820,68 @@ const modList = [
   superparseMod
 ];
 
+/*!
+ * @name         waterMarkEraser.js
+ * @description  水印清除工具
+ * @version      0.0.1
+ * @author       xxxily
+ * @date         2022/05/25 14:03
+ * @github       https://github.com/xxxily
+ */
+
+function hasWaterMarkFeature (el) {
+  if (!el) {
+    return false
+  }
+
+  let result = false;
+
+  if (el.className && typeof el.className === 'string') {
+    const className = el.className.toLowerCase().replace(/[-_]/g, '');
+    if (className.indexOf('watermark') > -1) {
+      result = true;
+    }
+  } else if (el.id && typeof el.id === 'string') {
+    if (el.id.toLowerCase().indexOf('watermark') > -1) {
+      result = true;
+    }
+  }
+
+  // 进一步确认是否符合水印特征
+  if (result) {
+    const style = window.getComputedStyle(el);
+    if (style.pointerEvents !== 'none') {
+      result = false;
+    }
+  }
+
+  return result
+}
+
+function waterMarkEraser (shadowRoot) {
+  const mObserver = new MutationObserver((mutationsList, observer) => {
+    mutationsList.forEach(mutation => {
+      if (mutation.addedNodes) {
+        mutation.addedNodes.forEach(node => {
+          if (hasWaterMarkFeature(node)) {
+            console.log('[waterMarkEraser]', node);
+            node.style.display = 'none';
+          }
+        });
+      }
+    });
+  });
+
+  const docRoot = shadowRoot || window.document.documentElement;
+  mObserver.observe(docRoot, {
+    childList: true,
+    subtree: true
+  });
+}
+
 /* 强制标识当前处于调试模式 */
 window._debugMode_ = true;
-const debug$1 = Debug$1.create('myscript message:');
+const debug = Debug$1.create('myscript message:');
 
 /* 劫持localStorage.setItem 方法，增加修改监听功能 */
 const orignalLocalStorageSetItem = localStorage.setItem;
@@ -870,9 +929,9 @@ function matchAndRun (matchItem, callback, conf) {
       hasMatchItem = true;
       callback(matchStr, conf);
       if (window !== top) {
-        debug$1.log(`个人脚本规则在ifram里生效：${conf.describe || ''}`, conf);
+        debug.log(`个人脚本规则在ifram里生效：${conf.describe || ''}`, conf);
       } else {
-        debug$1.log(`个人脚本规则生效：${conf.describe || ''}`, conf);
+        debug.log(`个人脚本规则生效：${conf.describe || ''}`, conf);
       }
     }
   });
@@ -1055,7 +1114,7 @@ const taskMap = [
     run: function () {
       ready(['.login-mark', 'div.Modal-backdrop'], element => {
         element.click();
-        debug$1.log('检测到烦人的登录提示弹框，已主动为你关闭，如果又误关闭，请提醒作者优化脚本逻辑，或关掉该脚本');
+        debug.log('检测到烦人的登录提示弹框，已主动为你关闭，如果又误关闭，请提醒作者优化脚本逻辑，或关掉该脚本');
       });
     }
   },
@@ -1115,7 +1174,7 @@ function moduleSetup (mods) {
       modItem.setup(addTaskMap);
       modItem._isSetup_ = true;
     } else {
-      debug$1.error('模块安装失败！', modItem);
+      debug.error('模块安装失败！', modItem);
     }
   });
 }
@@ -1123,11 +1182,14 @@ function moduleSetup (mods) {
 /**
  * 脚本入口
  */
-function init$1 () {
+function init () {
   /* 注册相关模块 */
   moduleSetup(modList);
 
   /* 运行任务队列 */
   runTaskMap(taskMap);
+
+  
+  waterMarkEraser();
 }
-init$1();
+init();

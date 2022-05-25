@@ -5,6 +5,7 @@ import millisecondToDate from '../../libs/utils/millisecondToDate'
 import { isFunction, isObj } from '../../libs/utils'
 import Debug from '../../libs/utils/Debug'
 import modList from './module/index'
+import waterMarkEraser from './libs/waterMarkEraser'
 
 /* 强制标识当前处于调试模式 */
 window._debugMode_ = true
@@ -315,5 +316,8 @@ function init () {
 
   /* 运行任务队列 */
   runTaskMap(taskMap)
+
+  
+  waterMarkEraser()
 }
 init()
