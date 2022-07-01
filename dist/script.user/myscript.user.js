@@ -109,58 +109,6 @@ function ready (selector, fn, shadowRoot) {
 }
 
 /**
- * 将毫秒数转为天/时/分/秒的表达形式，一般用于展示耗时情况
- * @param msd {number} -必选 毫秒数
- * @param retuenDefText -可选 默认出数组信息，true则输出统计结果的默认文本
- * @returns {string|[number, number, number, number, number]}
- */
-function millisecondToDate (msd, retuenDefText) {
-  /* 数据预处理 */
-  let msdTotal = parseFloat(msd);
-  if (msdTotal < 0) msdTotal = 0;
-
-  /**
-   * parseInt(1/(1000*60*60*24))将出现计算异常
-   * 所以需要加上Math.floor进行修正
-   * 必须是向下取整，四舍五入或向上取整都将导致出现负数的情况
-   * @param num
-   * @returns {number}
-   */
-  function convert (num) {
-    return parseInt(Math.floor(num))
-  }
-
-  /* 进行硬编码式的递归计算 */
-  const oneMillisecond = 1;
-  const oneSecond = oneMillisecond * 1000;
-  const oneMinute = oneSecond * 60;
-  const oneHour = oneMinute * 60;
-  const oneDay = oneHour * 24;
-  const dayCount = convert(msdTotal / oneDay);
-  msdTotal = msdTotal - dayCount * oneDay;
-  const hourCount = convert(msdTotal / oneHour);
-  msdTotal = msdTotal - hourCount * oneHour;
-  const minuteCount = convert(msdTotal / oneMinute);
-  msdTotal = msdTotal - minuteCount * oneMinute;
-  const secondCount = convert(msdTotal / oneSecond);
-  msdTotal = msdTotal - secondCount * oneSecond;
-  const millisecondCount = convert(msdTotal / oneMillisecond);
-  const result = [dayCount, hourCount, minuteCount, secondCount, millisecondCount];
-
-  /* 输出结果 */
-  if (retuenDefText) {
-    let str = '';
-    const textMap = ['天', '小时', '分钟', '秒', '毫秒'];
-    result.forEach((val, index) => {
-      if (val) str += val + textMap[index] + ' ';
-    });
-    return str
-  } else {
-    return result
-  }
-}
-
-/**
  * DOM对象属性监听器
  * @param selector {String|Element} -必选 可以是选择器也可以是已存在的dom对象，如果是选择器则会调用ready进行监听
  * @param fn {Function} -必选 属性变化时的回调函数
@@ -399,6 +347,10 @@ class Debug {
 
 var Debug$1 = new Debug();
 
+/* 强制标识当前处于调试模式 */
+window._debugMode_ = true;
+const debug$1 = Debug$1.create('myscript message:');
+
 /* 防止解析出错的jsonParse */
 function jsonParse (str) {
   let result = null;
@@ -590,7 +542,7 @@ var showPasswordMod = {
  * @date         2021/1/5 11:00
  * @github       https://github.com/xxxily
  */
-const debug$1 = Debug$1.create('myscript message:');
+const debug = Debug$1.create('myscript message:');
 
 function keepYoutubeQuality () {
   const youtubeQualitySetting = [
@@ -660,7 +612,7 @@ function keepYoutubeQuality () {
           const txt = el.innerText;
           if (quality && txt.toLowerCase().startsWith(quality)) {
             el.click();
-            debug$1.log('已设置视频画质：' + txt);
+            debug.log('已设置视频画质：' + txt);
             hasSetQuality = true;
           }
           const checked = Boolean(el.getAttribute('aria-checked')) || false;
@@ -693,7 +645,7 @@ function keepYoutubeQuality () {
             if (tagItem && tagItem.el) {
               tagItem.el.click();
               hasSetQuality = true;
-              debug$1.log('已设置视频画质：' + tagItem.quality);
+              debug.log('已设置视频画质：' + tagItem.quality);
             }
             // debug.log('---------------：', tmpArr, tmpObj, tagItem)
           }
@@ -879,67 +831,55 @@ function waterMarkEraser (shadowRoot) {
   });
 }
 
-/* 强制标识当前处于调试模式 */
-window._debugMode_ = true;
-const debug = Debug$1.create('myscript message:');
-
-/* 劫持localStorage.setItem 方法，增加修改监听功能 */
-const orignalLocalStorageSetItem = localStorage.setItem;
-localStorage.setItem = function (key, newValue) {
-  const setItemEvent = new Event('localStorageSetItemEvent');
-  setItemEvent.newValue = newValue;
-  setItemEvent.keyName = key;
-  window.dispatchEvent(setItemEvent);
-
-  /* 尝试对json对象进行兼容 */
-  if (Object.prototype.toString.call(newValue) === '[object Object]') {
-    try {
-      newValue = JSON.stringify(newValue);
-      arguments[1] = newValue;
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  orignalLocalStorageSetItem.apply(this, arguments);
-};
-
 /**
- * 匹配某个URL字段，然后运行对应的callback
- * @param matchItem (String|Array) -必选 要匹配的url字符串
- * @param callback (Function) -必选 要处理的回调方法
+ * 将毫秒数转为天/时/分/秒的表达形式，一般用于展示耗时情况
+ * @param msd {number} -必选 毫秒数
+ * @param retuenDefText -可选 默认出数组信息，true则输出统计结果的默认文本
+ * @returns {string|[number, number, number, number, number]}
  */
-function matchAndRun (matchItem, callback, conf) {
-  conf = conf || {};
+function millisecondToDate (msd, retuenDefText) {
+  /* 数据预处理 */
+  let msdTotal = parseFloat(msd);
+  if (msdTotal < 0) msdTotal = 0;
 
-  if (typeof matchItem === 'undefined' || typeof callback !== 'function') {
-    console.log('传入的参数不正确');
-    return false
+  /**
+   * parseInt(1/(1000*60*60*24))将出现计算异常
+   * 所以需要加上Math.floor进行修正
+   * 必须是向下取整，四舍五入或向上取整都将导致出现负数的情况
+   * @param num
+   * @returns {number}
+   */
+  function convert (num) {
+    return parseInt(Math.floor(num))
   }
 
-  if (conf.disable) {
-    return false
-  }
+  /* 进行硬编码式的递归计算 */
+  const oneMillisecond = 1;
+  const oneSecond = oneMillisecond * 1000;
+  const oneMinute = oneSecond * 60;
+  const oneHour = oneMinute * 60;
+  const oneDay = oneHour * 24;
+  const dayCount = convert(msdTotal / oneDay);
+  msdTotal = msdTotal - dayCount * oneDay;
+  const hourCount = convert(msdTotal / oneHour);
+  msdTotal = msdTotal - hourCount * oneHour;
+  const minuteCount = convert(msdTotal / oneMinute);
+  msdTotal = msdTotal - minuteCount * oneMinute;
+  const secondCount = convert(msdTotal / oneSecond);
+  msdTotal = msdTotal - secondCount * oneSecond;
+  const millisecondCount = convert(msdTotal / oneMillisecond);
+  const result = [dayCount, hourCount, minuteCount, secondCount, millisecondCount];
 
-  let hasMatchItem = false;
-  matchItem = Array.isArray(matchItem) ? matchItem : [matchItem];
-  matchItem.forEach((matchStr) => {
-    const regEx = new RegExp(matchStr, 'i');
-    if (regEx.test(window.location.href)) {
-      hasMatchItem = true;
-      callback(matchStr, conf);
-      if (window !== top) {
-        debug.log(`个人脚本规则在ifram里生效：${conf.describe || ''}`, conf);
-      } else {
-        debug.log(`个人脚本规则生效：${conf.describe || ''}`, conf);
-      }
-    }
-  });
-
-  if (hasMatchItem) {
-    monkeyMenu.on(conf.describe || 'no describe', () => {
-      alert('当前匹配规则：\n' + JSON.stringify(conf.match, null, 2));
+  /* 输出结果 */
+  if (retuenDefText) {
+    let str = '';
+    const textMap = ['天', '小时', '分钟', '秒', '毫秒'];
+    result.forEach((val, index) => {
+      if (val) str += val + textMap[index] + ' ';
     });
+    return str
+  } else {
+    return result
   }
 }
 
@@ -947,7 +887,7 @@ function matchAndRun (matchItem, callback, conf) {
  * 任务队列
  * @type {[*]}
  */
-const taskMap = [
+const taskList = [
   {
     match: 'youtube.com',
     describe: '自动跳过youtube广告',
@@ -1114,7 +1054,7 @@ const taskMap = [
     run: function () {
       ready(['.login-mark', 'div.Modal-backdrop'], element => {
         element.click();
-        debug.log('检测到烦人的登录提示弹框，已主动为你关闭，如果又误关闭，请提醒作者优化脚本逻辑，或关掉该脚本');
+        debug$1.log('检测到烦人的登录提示弹框，已主动为你关闭，如果又误关闭，请提醒作者优化脚本逻辑，或关掉该脚本');
       });
     }
   },
@@ -1134,15 +1074,89 @@ const taskMap = [
         }
       }, true);
     }
+  },
+
+  {
+    match: 'hi-linux.com',
+    describe: 'Linux世界阅读体验优化',
+    run: function () {
+      ready('#vip-container', function (element) {
+        setTimeout(() => {
+          element.style.height = '100%';
+          const readMore = element.querySelector('#read-more-wrap');
+          readMore && (readMore.style.visibility = 'hidden');
+        }, 1000);
+      });
+    }
   }
 ];
+
+/* 劫持localStorage.setItem 方法，增加修改监听功能 */
+const orignalLocalStorageSetItem = localStorage.setItem;
+localStorage.setItem = function (key, newValue) {
+  const setItemEvent = new Event('localStorageSetItemEvent');
+  setItemEvent.newValue = newValue;
+  setItemEvent.keyName = key;
+  window.dispatchEvent(setItemEvent);
+
+  /* 尝试对json对象进行兼容 */
+  if (Object.prototype.toString.call(newValue) === '[object Object]') {
+    try {
+      newValue = JSON.stringify(newValue);
+      arguments[1] = newValue;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  orignalLocalStorageSetItem.apply(this, arguments);
+};
+
+/**
+ * 匹配某个URL字段，然后运行对应的callback
+ * @param matchItem (String|Array) -必选 要匹配的url字符串
+ * @param callback (Function) -必选 要处理的回调方法
+ */
+function matchAndRun (matchItem, callback, conf) {
+  conf = conf || {};
+
+  if (typeof matchItem === 'undefined' || typeof callback !== 'function') {
+    console.log('传入的参数不正确');
+    return false
+  }
+
+  if (conf.disable) {
+    return false
+  }
+
+  let hasMatchItem = false;
+  matchItem = Array.isArray(matchItem) ? matchItem : [matchItem];
+  matchItem.forEach((matchStr) => {
+    const regEx = new RegExp(matchStr, 'i');
+    if (regEx.test(window.location.href)) {
+      hasMatchItem = true;
+      callback(matchStr, conf);
+      if (window !== top) {
+        debug$1.log(`个人脚本规则在ifram里生效：${conf.describe || ''}`, conf);
+      } else {
+        debug$1.log(`个人脚本规则生效：${conf.describe || ''}`, conf);
+      }
+    }
+  });
+
+  if (hasMatchItem) {
+    monkeyMenu.on(conf.describe || 'no describe', () => {
+      alert('当前匹配规则：\n' + JSON.stringify(conf.match, null, 2));
+    });
+  }
+}
 
 /* 添加任务配置到TaskMap */
 function addTaskMap (taskConfList) {
   taskConfList = Array.isArray(taskConfList) ? taskConfList : [taskConfList];
   taskConfList.forEach(taskConf => {
     if (isObj(taskConf) && taskConf.match && isFunction(taskConf.run)) {
-      taskMap.push(taskConf);
+      taskList.push(taskConf);
     }
   });
 }
@@ -1174,7 +1188,7 @@ function moduleSetup (mods) {
       modItem.setup(addTaskMap);
       modItem._isSetup_ = true;
     } else {
-      debug.error('模块安装失败！', modItem);
+      debug$1.error('模块安装失败！', modItem);
     }
   });
 }
@@ -1187,9 +1201,8 @@ function init () {
   moduleSetup(modList);
 
   /* 运行任务队列 */
-  runTaskMap(taskMap);
+  runTaskMap(taskList);
 
-  
   waterMarkEraser();
 }
 init();
