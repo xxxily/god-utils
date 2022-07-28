@@ -28,8 +28,30 @@ function hasWaterMarkFeature (el) {
   // 进一步确认是否符合水印特征
   if (result) {
     const style = window.getComputedStyle(el)
+
     if (style.pointerEvents !== 'none') {
       result = false
+    }
+
+    /* 通过判断是否存在众多设置为pointerEvents的元素来进一步确认其子节点是否存在水印特征 */
+    const childNodes = el.querySelectorAll('*')
+    let hasPointerEventsElCount = 0
+
+    if (childNodes.length > 20) {
+      childNodes.forEach(child => {
+        const style = window.getComputedStyle(child)
+        if (style.pointerEvents === 'none') {
+          hasPointerEventsElCount++
+        }
+      })
+
+      if (hasPointerEventsElCount > childNodes.length * 0.7) {
+        result = true
+      }
+    }
+
+    if (!result) {
+      console.log('[waterMarkEraser]', '发现watermark的相关标签，但未匹配已定义的水印特征', el)
     }
   }
 
@@ -42,8 +64,12 @@ function waterMarkEraser (shadowRoot) {
       if (mutation.addedNodes) {
         mutation.addedNodes.forEach(node => {
           if (hasWaterMarkFeature(node)) {
+            setTimeout(() => { node.style.display = 'none' }, 0)
+
+            /* 延迟再次隐藏，防止水印被重新显示 */
+            setTimeout(() => { node.style.display = 'none' }, 1200)
+
             console.log('[waterMarkEraser]', node)
-            node.style.display = 'none'
           }
         })
       }

@@ -196,6 +196,16 @@ const taskList = [
   },
 
   {
+    match: 'icloudnative.io',
+    describe: 'icloudnative体验优化',
+    run: function () {
+      ready('.wrapper__left .join-us', function (element) {
+        element.style.display = 'none'
+      })
+    }
+  },
+
+  {
     match: 'hi-linux.com',
     describe: 'Linux世界阅读体验优化',
     run: function () {
