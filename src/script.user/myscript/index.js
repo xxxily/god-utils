@@ -4,6 +4,7 @@ import { isFunction, isObj } from '../../libs/utils'
 import debug from './debug'
 import modList from './module/index'
 import waterMarkEraser from './libs/waterMarkEraser'
+import { registerDebuggerEraser } from './libs/debuggerEraser'
 import taskList from './taskList'
 
 /* 劫持localStorage.setItem 方法，增加修改监听功能 */
@@ -119,5 +120,6 @@ function init () {
   runTaskMap(taskList)
 
   waterMarkEraser()
+  registerDebuggerEraser()
 }
 init()
