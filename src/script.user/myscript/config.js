@@ -2,6 +2,9 @@ import localStorageProxy from 'local-storage-proxy'
 
 const defaultConfig = {
   debugTools: {
+    /* 是否启用调试模式的全局标识 */
+    debugModeTag: true,
+
     /* 是否开启eruda，可用于开启反调试的页面上 */
     eruda: false,
     vconsole: false,

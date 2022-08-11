@@ -153,6 +153,9 @@ var localStorageProxy = (name, opts = {}) => {
 
 const defaultConfig = {
   debugTools: {
+    /* 是否启用调试模式的全局标识 */
+    debugModeTag: true,
+
     /* 是否开启eruda，可用于开启反调试的页面上 */
     eruda: false,
     vconsole: false,
@@ -170,6 +173,88 @@ const config = localStorageProxy('_myscriptConfig_', {
   lspReset: false,
   storageEventListener: false
 });
+
+/**
+ * 由于tampermonkey对window对象进行了封装，我们实际访问到的window并非页面真实的window
+ * 这就导致了如果我们需要将某些对象挂载到页面的window进行调试的时候就无法挂载了
+ * 所以必须使用特殊手段才能访问到页面真实的window对象，于是就有了下面这个函数
+ * @returns {Promise<void>}
+ */
+async function getPageWindow () {
+  return new Promise(function (resolve, reject) {
+    if (window._pageWindow) {
+      return resolve(window._pageWindow)
+    }
+
+    const listenEventList = ['load', 'mousemove', 'scroll', 'get-page-window-event'];
+
+    function getWin (event) {
+      window._pageWindow = this;
+      // debug.log('getPageWindow succeed', event)
+      listenEventList.forEach(eventType => {
+        window.removeEventListener(eventType, getWin, true);
+      });
+      resolve(window._pageWindow);
+    }
+
+    listenEventList.forEach(eventType => {
+      window.addEventListener(eventType, getWin, true);
+    });
+
+    /* 自行派发事件以便用最短的时候获得pageWindow对象 */
+    window.dispatchEvent(new window.Event('get-page-window-event'));
+  })
+}
+getPageWindow();
+
+/**
+ * 通过同步的方式获取pageWindow
+ * 注意同步获取的方式需要将脚本写入head，部分网站由于安全策略会导致写入失败，而无法正常获取
+ * @returns {*}
+ */
+function getPageWindowSync () {
+  if (document._win_) return document._win_
+
+  try {
+    // eslint-disable-next-line no-new-func
+    return Function('return window')()
+  } catch (e) {
+    console.error('getPageWindowSync error', e);
+
+    const head = document.head || document.querySelector('head');
+    const script = document.createElement('script');
+    script.appendChild(document.createTextNode('document._win_ = window'));
+    head.appendChild(script);
+
+    return document._win_
+  }
+}
+
+/*!
+ * @name         setDebugMode.js
+ * @description  标识当前处于调试模式
+ * @version      0.0.1
+ * @author       xxxily
+ * @date         2022/08/11 14:47
+ * @github       https://github.com/xxxily
+ */
+
+function setDebugMode () {
+  /* 让脚本可以输出调试信息 */
+  window._debugMode_ = true;
+
+  const pageWindow = getPageWindowSync();
+
+  /* 标识当前处于调试模式 */
+  pageWindow.__debugMode__ = true;
+  pageWindow._debugMode_ = true;
+
+  /* 开发环境运行标识，只对遵循该标识的逻辑生效 */
+  pageWindow._isDevEnv_ = true;
+
+  /* 允许进行Mock标识，只对遵循该标识的逻辑生效 */
+  pageWindow._isAllowMock_ = true;
+}
 
 /**
  * 元素监听器
@@ -467,7 +552,7 @@ class Debug {
 var Debug$1 = new Debug();
 
 /* 强制标识当前处于调试模式 */
-window._debugMode_ = true;
+// window._debugMode_ = true
 const debug$1 = Debug$1.create('myscript message:');
 
 /*!
@@ -561,39 +646,6 @@ function jsonParse (str) {
   result = result || {};
   return result
 }
-
-/**
- * 由于tampermonkey对window对象进行了封装，我们实际访问到的window并非页面真实的window
- * 这就导致了如果我们需要将某些对象挂载到页面的window进行调试的时候就无法挂载了
- * 所以必须使用特殊手段才能访问到页面真实的window对象，于是就有了下面这个函数
- * @returns {Promise<void>}
- */
-async function getPageWindow () {
-  return new Promise(function (resolve, reject) {
-    if (window._pageWindow) {
-      return resolve(window._pageWindow)
-    }
-
-    const listenEventList = ['load', 'mousemove', 'scroll', 'get-page-window-event'];
-
-    function getWin (event) {
-      window._pageWindow = this;
-      // debug.log('getPageWindow succeed', event)
-      listenEventList.forEach(eventType => {
-        window.removeEventListener(eventType, getWin, true);
-      });
-      resolve(window._pageWindow);
-    }
-
-    listenEventList.forEach(eventType => {
-      window.addEventListener(eventType, getWin, true);
-    });
-
-    /* 自行派发事件以便用最短的时候获得pageWindow对象 */
-    window.dispatchEvent(new window.Event('get-page-window-event'));
-  })
-}
-getPageWindow();
 
 /*!
  * @name         autoRefresh.js
@@ -1417,6 +1469,13 @@ let monkeyMenuList = [
       config.debugTools.vconsole = !config.debugTools.vconsole;
       refreshPage();
     }
+  },
+  {
+    title: config.debugTools.debugModeTag ? '关闭【调试模式】标识' : '开启【调试模式】标识',
+    fn: () => {
+      config.debugTools.debugModeTag = !config.debugTools.debugModeTag;
+      refreshPage();
+    }
   }
 ];
 
@@ -1553,6 +1612,13 @@ function moduleSetup (mods) {
  * 脚本入口
  */
 function init () {
+  /* 开启相关辅组插件 */
+  config.debugTools.debugModeTag && setDebugMode();
+  config.enhanceTools.waterMarkEraser && waterMarkEraser();
+  config.debugTools.debuggerEraser && registerDebuggerEraser();
+  config.debugTools.eruda && window.eruda && window.eruda.init();
+  config.debugTools.vconsole && window.VConsole && (new window.VConsole());
+
   /* 注册菜单 */
   menuRegister();
 
@@ -1562,10 +1628,6 @@ function init () {
   /* 运行任务队列 */
   runTaskMap(taskList);
 
-  /* 开启相关辅组插件 */
-  config.enhanceTools.waterMarkEraser && waterMarkEraser();
-  config.debugTools.debuggerEraser && registerDebuggerEraser();
-  config.debugTools.eruda && window.eruda && window.eruda.init();
-  config.debugTools.vconsole && window.VConsole && (new window.VConsole());
+  debug$1.log('init success');
 }
 init();

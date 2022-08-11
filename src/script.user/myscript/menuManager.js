@@ -49,6 +49,13 @@ let monkeyMenuList = [
       config.debugTools.vconsole = !config.debugTools.vconsole
       refreshPage()
     }
+  },
+  {
+    title: config.debugTools.debugModeTag ? '关闭【调试模式】标识' : '开启【调试模式】标识',
+    fn: () => {
+      config.debugTools.debugModeTag = !config.debugTools.debugModeTag
+      refreshPage()
+    }
   }
 ]
 

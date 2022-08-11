@@ -1,5 +1,6 @@
 import './comment'
 import config from './config'
+import setDebugMode from './libs/setDebugMode'
 import { isFunction, isObj } from '../../libs/utils'
 import debug from './debug'
 import modList from './module/index'
@@ -118,6 +119,13 @@ function moduleSetup (mods) {
  * 脚本入口
  */
 function init () {
+  /* 开启相关辅组插件 */
+  config.debugTools.debugModeTag && setDebugMode()
+  config.enhanceTools.waterMarkEraser && waterMarkEraser()
+  config.debugTools.debuggerEraser && registerDebuggerEraser()
+  config.debugTools.eruda && window.eruda && window.eruda.init()
+  config.debugTools.vconsole && window.VConsole && (new window.VConsole())
+
   /* 注册菜单 */
   menuRegister()
 
@@ -127,10 +135,6 @@ function init () {
   /* 运行任务队列 */
   runTaskMap(taskList)
 
-  /* 开启相关辅组插件 */
-  config.enhanceTools.waterMarkEraser && waterMarkEraser()
-  config.debugTools.debuggerEraser && registerDebuggerEraser()
-  config.debugTools.eruda && window.eruda && window.eruda.init()
-  config.debugTools.vconsole && window.VConsole && (new window.VConsole())
+  debug.log('init success')
 }
 init()
