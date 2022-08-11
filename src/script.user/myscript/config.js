@@ -4,6 +4,7 @@ const defaultConfig = {
   debugTools: {
     /* 是否开启eruda，可用于开启反调试的页面上 */
     eruda: false,
+    vconsole: false,
     /* 是否启用debugger消除插件 */
     debuggerEraser: false
   },

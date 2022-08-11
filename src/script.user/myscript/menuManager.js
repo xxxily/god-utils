@@ -11,41 +11,43 @@ import monkeyMenu from '../common/monkeyMenu'
 import config from './config'
 import debug from './debug'
 
+function refreshPage (msg) {
+  debug.log('[config]', JSON.stringify(config, null, 2))
+
+  msg = msg || '配置已更改，马上刷新页面让配置生效？'
+  const status = confirm(msg)
+  if (status) {
+    window.location.reload()
+  }
+}
+
 let monkeyMenuList = [
   {
     title: config.enhanceTools.waterMarkEraser ? '关闭waterMarkEraser' : '开启waterMarkEraser',
     fn: () => {
       config.enhanceTools.waterMarkEraser = !config.enhanceTools.waterMarkEraser
-
-      debug.log('[config.enhanceTools.waterMarkEraser]', config.enhanceTools.waterMarkEraser)
-      const status = confirm('waterMarkEraser状态已更新，马上刷新页面？')
-      if (status) {
-        window.location.reload()
-      }
+      refreshPage()
     }
   },
   {
     title: config.debugTools.debuggerEraser ? '关闭debuggerEraser' : '开启debuggerEraser',
     fn: () => {
       config.debugTools.debuggerEraser = !config.debugTools.debuggerEraser
-
-      debug.log('[config.debugTools.debuggerEraser]', config.debugTools.debuggerEraser)
-      const status = confirm('debuggerEraser状态已更新，马上刷新页面？')
-      if (status) {
-        window.location.reload()
-      }
+      refreshPage()
     }
   },
   {
     title: config.debugTools.eruda ? '关闭eruda' : '开启eruda',
     fn: () => {
       config.debugTools.eruda = !config.debugTools.eruda
-
-      debug.log('[config.debugTools.eruda]', config.debugTools.eruda)
-      const status = confirm('eruda状态已更新，马上刷新页面？')
-      if (status) {
-        window.location.reload()
-      }
+      refreshPage()
+    }
+  },
+  {
+    title: config.debugTools.vconsole ? '关闭vconsole' : '开启vconsole',
+    fn: () => {
+      config.debugTools.vconsole = !config.debugTools.vconsole
+      refreshPage()
     }
   }
 ]

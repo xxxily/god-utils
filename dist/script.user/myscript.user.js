@@ -27,8 +27,8 @@
 // @license      GPL
 // @run-at       document-start
 // @updateURL    https://github.com/xxxily/god-utils/raw/master/dist/script.user/myscript.user.js
-// @require      https://cdn.bootcss.com/jquery/3.5.1/jquery.min.js
 // @require      https://cdn.jsdelivr.net/npm/eruda@2.5.0/eruda.min.js
+// @require      https://cdn.jsdelivr.net/npm/vconsole@3.14.6/dist/vconsole.min.js
 // ==/UserScript==
 (function (w) { if (w) { w.name = 'myscript'; } })();
 
@@ -155,6 +155,7 @@ const defaultConfig = {
   debugTools: {
     /* 是否开启eruda，可用于开启反调试的页面上 */
     eruda: false,
+    vconsole: false,
     /* 是否启用debugger消除插件 */
     debuggerEraser: false
   },
@@ -1378,41 +1379,43 @@ const taskList = [
  * @github       https://github.com/xxxily
  */
 
+function refreshPage (msg) {
+  debug$1.log('[config]', JSON.stringify(config, null, 2));
+
+  msg = msg || '配置已更改，马上刷新页面让配置生效？';
+  const status = confirm(msg);
+  if (status) {
+    window.location.reload();
+  }
+}
+
 let monkeyMenuList = [
   {
     title: config.enhanceTools.waterMarkEraser ? '关闭waterMarkEraser' : '开启waterMarkEraser',
     fn: () => {
       config.enhanceTools.waterMarkEraser = !config.enhanceTools.waterMarkEraser;
-
-      debug$1.log('[config.enhanceTools.waterMarkEraser]', config.enhanceTools.waterMarkEraser);
-      const status = confirm('waterMarkEraser状态已更新，马上刷新页面？');
-      if (status) {
-        window.location.reload();
-      }
+      refreshPage();
     }
   },
   {
     title: config.debugTools.debuggerEraser ? '关闭debuggerEraser' : '开启debuggerEraser',
     fn: () => {
       config.debugTools.debuggerEraser = !config.debugTools.debuggerEraser;
-
-      debug$1.log('[config.debugTools.debuggerEraser]', config.debugTools.debuggerEraser);
-      const status = confirm('debuggerEraser状态已更新，马上刷新页面？');
-      if (status) {
-        window.location.reload();
-      }
+      refreshPage();
     }
   },
   {
     title: config.debugTools.eruda ? '关闭eruda' : '开启eruda',
     fn: () => {
       config.debugTools.eruda = !config.debugTools.eruda;
-
-      debug$1.log('[config.debugTools.eruda]', config.debugTools.eruda);
-      const status = confirm('eruda状态已更新，马上刷新页面？');
-      if (status) {
-        window.location.reload();
-      }
+      refreshPage();
+    }
+  },
+  {
+    title: config.debugTools.vconsole ? '关闭vconsole' : '开启vconsole',
+    fn: () => {
+      config.debugTools.vconsole = !config.debugTools.vconsole;
+      refreshPage();
     }
   }
 ];
@@ -1563,5 +1566,6 @@ function init () {
   config.enhanceTools.waterMarkEraser && waterMarkEraser();
   config.debugTools.debuggerEraser && registerDebuggerEraser();
   config.debugTools.eruda && window.eruda && window.eruda.init();
+  config.debugTools.vconsole && window.VConsole && (new window.VConsole());
 }
 init();

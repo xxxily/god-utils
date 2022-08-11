@@ -131,5 +131,6 @@ function init () {
   config.enhanceTools.waterMarkEraser && waterMarkEraser()
   config.debugTools.debuggerEraser && registerDebuggerEraser()
   config.debugTools.eruda && window.eruda && window.eruda.init()
+  config.debugTools.vconsole && window.VConsole && (new window.VConsole())
 }
 init()
