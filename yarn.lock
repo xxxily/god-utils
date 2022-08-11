@@ -6250,6 +6250,13 @@ loader-utils@^2.0.0:
     emojis-list "^3.0.0"
     json5 "^2.1.2"
 
+local-storage-proxy@^4.0.3:
+  version "4.0.3"
+  resolved "https://registry.npmmirror.com/local-storage-proxy/-/local-storage-proxy-4.0.3.tgz#25bfc0363af559248b7b4e3f46d62d7fc292a0b2"
+  integrity sha512-07e/qClDqhyusxadyYrazEvFyQcMm2NkPCyDZstoDyAtqRZxTaCZNTnKps7lTWyTuqQfsiSXg4wfGLLdmraO4Q==
+  dependencies:
+    webassert "^3.0.1"
+
 localforage@^1.9.0:
   version "1.10.0"
   resolved "https://registry.npmmirror.com/localforage/-/localforage-1.10.0.tgz#5c465dc5f62b2807c3a84c0c6a1b1b3212781dd4"
@@ -10028,6 +10035,11 @@ wbuf@^1.1.0, wbuf@^1.7.3:
   integrity sha512-O84QOnr0icsbFGLS0O3bI5FswxzRr8/gHwWkDlQFskhSPryQXvrTMxjxGP4+iWYoauLoBvfDpkrOauZ+0iZpDA==
   dependencies:
     minimalistic-assert "^1.0.0"
+
+webassert@^3.0.1:
+  version "3.0.2"
+  resolved "https://registry.npmmirror.com/webassert/-/webassert-3.0.2.tgz#ddb57f3cd8c9957bae56719644174b75cbd4f024"
+  integrity sha512-nI8BKTL9S3US7NSXKTPl6yYAAgmRSsUqTSg0C2BRnGXqZqHZGdvJxR9mBoOQ6sY4Z5ooUEzlEfL5lDipDtqTVA==
 
 webidl-conversions@^4.0.2:
   version "4.0.2"

@@ -28,29 +28,147 @@
 // @run-at       document-start
 // @updateURL    https://github.com/xxxily/god-utils/raw/master/dist/script.user/myscript.user.js
 // @require      https://cdn.bootcss.com/jquery/3.5.1/jquery.min.js
+// @require      https://cdn.jsdelivr.net/npm/eruda@2.5.0/eruda.min.js
 // ==/UserScript==
 (function (w) { if (w) { w.name = 'myscript'; } })();
 
-/*!
- * @name      menuCommand.js
- * @version   0.0.1
- * @author    Blaze
- * @date      2019/9/21 14:22
- */
+class AssertionError extends Error {}
+AssertionError.prototype.name = 'AssertionError';
 
-const monkeyMenu = {
-  on (title, fn, accessKey) {
-    return window.GM_registerMenuCommand && window.GM_registerMenuCommand(title, fn, accessKey)
+/**
+ * Minimal assert function
+ * @param  {any} t Value to check if falsy
+ * @param  {string=} m Optional assertion error message
+ * @throws {AssertionError}
+ */
+function assert (t, m) {
+  if (!t) {
+    var err = new AssertionError(m);
+    if (Error.captureStackTrace) Error.captureStackTrace(err, assert);
+    throw err
+  }
+}
+
+/* eslint-env browser */
+
+let ls;
+if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
+  // A simple localStorage interface so that lsp works in SSR contexts. Not for persistant storage in node.
+  const _nodeStorage = {};
+  ls = {
+    getItem (name) {
+      return _nodeStorage[name] || null
+    },
+    setItem (name, value) {
+      if (arguments.length < 2) throw new Error('Failed to execute \'setItem\' on \'Storage\': 2 arguments required, but only 1 present.')
+      _nodeStorage[name] = (value).toString();
+    },
+    removeItem (name) {
+      delete _nodeStorage[name];
+    }
+  };
+} else {
+  ls = window.localStorage;
+}
+
+var localStorageProxy = (name, opts = {}) => {
+  assert(name, 'namepace required');
+  const {
+    defaults = {},
+    lspReset = false,
+    storageEventListener = true
+  } = opts;
+
+  const state = new EventTarget();
+  try {
+    const restoredState = JSON.parse(ls.getItem(name)) || {};
+    if (restoredState.lspReset !== lspReset) {
+      ls.removeItem(name);
+      for (const [k, v] of Object.entries({
+        ...defaults
+      })) {
+        state[k] = v;
+      }
+    } else {
+      for (const [k, v] of Object.entries({
+        ...defaults,
+        ...restoredState
+      })) {
+        state[k] = v;
+      }
+    }
+  } catch (e) {
+    console.error(e);
+    ls.removeItem(name);
+  }
+
+  state.lspReset = lspReset;
+
+  if (storageEventListener && typeof window !== 'undefined' && typeof window.addEventListener !== 'undefined') {
+    window.addEventListener('storage', (ev) => {
+      // Replace state with whats stored on localStorage... it is newer.
+      for (const k of Object.keys(state)) {
+        delete state[k];
+      }
+      const restoredState = JSON.parse(ls.getItem(name)) || {};
+      for (const [k, v] of Object.entries({
+        ...defaults,
+        ...restoredState
+      })) {
+        state[k] = v;
+      }
+      opts.lspReset = restoredState.lspReset;
+      state.dispatchEvent(new Event('update'));
+    });
+  }
+
+  function boundHandler (rootRef) {
+    return {
+      get (obj, prop) {
+        if (typeof obj[prop] === 'object' && obj[prop] !== null) {
+          return new Proxy(obj[prop], boundHandler(rootRef))
+        } else if (typeof obj[prop] === 'function' && obj === rootRef && prop !== 'constructor') {
+          // this returns bound EventTarget functions
+          return obj[prop].bind(obj)
+        } else {
+          return obj[prop]
+        }
+      },
+      set (obj, prop, value) {
+        obj[prop] = value;
+        try {
+          ls.setItem(name, JSON.stringify(rootRef));
+          rootRef.dispatchEvent(new Event('update'));
+          return true
+        } catch (e) {
+          console.error(e);
+          return false
+        }
+      }
+    }
+  }
+
+  return new Proxy(state, boundHandler(state))
+};
+
+const defaultConfig = {
+  debugTools: {
+    /* 是否开启eruda，可用于开启反调试的页面上 */
+    eruda: false,
+    /* 是否启用debugger消除插件 */
+    debuggerEraser: false
   },
-  off (id) {
-    return window.GM_unregisterMenuCommand && window.GM_unregisterMenuCommand(id)
-  },
-  /* 切换类型的菜单功能 */
-  switch (title, fn, defVal) {
-    const t = this;
-    t.on(title, fn);
+  enhanceTools: {
+    /* 是否开启水印擦除插件 */
+    waterMarkEraser: true
   }
 };
+
+const config = localStorageProxy('_myscriptConfig_', {
+  defaults: defaultConfig,
+  lspReset: false,
+  storageEventListener: false
+});
 
 /**
  * 元素监听器
@@ -350,6 +468,85 @@ var Debug$1 = new Debug();
 /* 强制标识当前处于调试模式 */
 window._debugMode_ = true;
 const debug$1 = Debug$1.create('myscript message:');
+
+/*!
+ * @name      menuCommand.js
+ * @version   0.0.1
+ * @author    Blaze
+ * @date      2019/9/21 14:22
+ */
+
+const monkeyMenu = {
+  menuIds: {},
+  on (title, fn, accessKey) {
+    if (window.GM_registerMenuCommand) {
+      const menuId = window.GM_registerMenuCommand(title, fn, accessKey);
+
+      this.menuIds[menuId] = {
+        title,
+        fn,
+        accessKey
+      };
+
+      return menuId
+    }
+  },
+
+  off (id) {
+    if (window.GM_unregisterMenuCommand) {
+      delete this.menuIds[id];
+      return window.GM_unregisterMenuCommand(id)
+    }
+  },
+
+  clear () {
+    Object.keys(this.menuIds).forEach(id => {
+      this.off(id);
+    });
+  },
+
+  /**
+   * 通过菜单配置进行批量注册，注册前会清空之前注册过的所有菜单
+   * @param {array|function} menuOpts 菜单配置，如果是函数则会调用该函数获取菜单配置，并且当菜单被点击后会重新创建菜单，实现菜单的动态更新
+   */
+  build (menuOpts) {
+    this.clear();
+
+    if (Array.isArray(menuOpts)) {
+      menuOpts.forEach(menu => {
+        if (menu.disable === true) { return }
+        this.on(menu.title, menu.fn, menu.accessKey);
+      });
+    } else if (menuOpts instanceof Function) {
+      const menuList = menuOpts();
+      if (Array.isArray(menuList)) {
+        this._menuBuilder_ = menuOpts;
+
+        menuList.forEach(menu => {
+          if (menu.disable === true) { return }
+
+          const menuFn = () => {
+            try {
+              menu.fn.apply(menu, arguments);
+            } catch (e) {
+              console.error('[monkeyMenu]', menu.title, e);
+            }
+
+            // 每次菜单点击后，重新注册菜单，这样可以确保菜单的状态是最新的
+            setTimeout(() => {
+              // console.log('[monkeyMenu rebuild]', menu.title)
+              this.build(this._menuBuilder_);
+            }, 100);
+          };
+
+          this.on(menu.title, menuFn, menu.accessKey);
+        });
+      } else {
+        console.error('monkeyMenu build error, no menuList return', menuOpts);
+      }
+    }
+  }
+};
 
 /* 防止解析出错的jsonParse */
 function jsonParse (str) {
@@ -1172,6 +1369,77 @@ const taskList = [
   }
 ];
 
+/*!
+ * @name         menuManager.js
+ * @description  菜单管理器
+ * @version      0.0.1
+ * @author       xxxily
+ * @date         2022/08/11 10:05
+ * @github       https://github.com/xxxily
+ */
+
+let monkeyMenuList = [
+  {
+    title: config.enhanceTools.waterMarkEraser ? '关闭waterMarkEraser' : '开启waterMarkEraser',
+    fn: () => {
+      config.enhanceTools.waterMarkEraser = !config.enhanceTools.waterMarkEraser;
+
+      debug$1.log('[config.enhanceTools.waterMarkEraser]', config.enhanceTools.waterMarkEraser);
+      const status = confirm('waterMarkEraser状态已更新，马上刷新页面？');
+      if (status) {
+        window.location.reload();
+      }
+    }
+  },
+  {
+    title: config.debugTools.debuggerEraser ? '关闭debuggerEraser' : '开启debuggerEraser',
+    fn: () => {
+      config.debugTools.debuggerEraser = !config.debugTools.debuggerEraser;
+
+      debug$1.log('[config.debugTools.debuggerEraser]', config.debugTools.debuggerEraser);
+      const status = confirm('debuggerEraser状态已更新，马上刷新页面？');
+      if (status) {
+        window.location.reload();
+      }
+    }
+  },
+  {
+    title: config.debugTools.eruda ? '关闭eruda' : '开启eruda',
+    fn: () => {
+      config.debugTools.eruda = !config.debugTools.eruda;
+
+      debug$1.log('[config.debugTools.eruda]', config.debugTools.eruda);
+      const status = confirm('eruda状态已更新，马上刷新页面？');
+      if (status) {
+        window.location.reload();
+      }
+    }
+  }
+];
+
+/* 菜单构造函数（必须是函数才能在点击后动态更新菜单状态） */
+function menuBuilder () {
+  return monkeyMenuList
+}
+
+/* 注册动态菜单 */
+function menuRegister () {
+  monkeyMenu.build(menuBuilder);
+}
+
+/**
+ * 增加菜单项
+ * @param {Object|Array} menuOpts 菜单的配置项目，多个配置项目用数组表示
+ */
+function addMenu (menuOpts) {
+  menuOpts = Array.isArray(menuOpts) ? menuOpts : [menuOpts];
+  menuOpts = menuOpts.filter(item => item.title && !item.disabled);
+  monkeyMenuList = monkeyMenuList.concat(menuOpts);
+
+  /* 重新注册菜单 */
+  menuRegister();
+}
+
 /* 劫持localStorage.setItem 方法，增加修改监听功能 */
 const orignalLocalStorageSetItem = localStorage.setItem;
 localStorage.setItem = function (key, newValue) {
@@ -1226,8 +1494,12 @@ function matchAndRun (matchItem, callback, conf) {
   });
 
   if (hasMatchItem) {
-    monkeyMenu.on(conf.describe || 'no describe', () => {
-      alert('当前匹配规则：\n' + JSON.stringify(conf.match, null, 2));
+    addMenu({
+      title: conf.describe || 'no describe',
+      disable: conf.disable || false,
+      fn: () => {
+        alert('当前匹配规则：\n' + JSON.stringify(conf.match, null, 2));
+      }
     });
   }
 }
@@ -1278,13 +1550,18 @@ function moduleSetup (mods) {
  * 脚本入口
  */
 function init () {
+  /* 注册菜单 */
+  menuRegister();
+
   /* 注册相关模块 */
   moduleSetup(modList);
 
   /* 运行任务队列 */
   runTaskMap(taskList);
 
-  waterMarkEraser();
-  registerDebuggerEraser();
+  /* 开启相关辅组插件 */
+  config.enhanceTools.waterMarkEraser && waterMarkEraser();
+  config.debugTools.debuggerEraser && registerDebuggerEraser();
+  config.debugTools.eruda && window.eruda && window.eruda.init();
 }
 init();

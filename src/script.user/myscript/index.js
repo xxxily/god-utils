@@ -1,11 +1,12 @@
 import './comment'
-import monkeyMenu from '../common/monkeyMenu'
+import config from './config'
 import { isFunction, isObj } from '../../libs/utils'
 import debug from './debug'
 import modList from './module/index'
 import waterMarkEraser from './libs/waterMarkEraser'
 import { registerDebuggerEraser } from './libs/debuggerEraser'
 import taskList from './taskList'
+import { menuRegister, addMenu } from './menuManager'
 
 /* 劫持localStorage.setItem 方法，增加修改监听功能 */
 const orignalLocalStorageSetItem = localStorage.setItem
@@ -61,8 +62,12 @@ function matchAndRun (matchItem, callback, conf) {
   })
 
   if (hasMatchItem) {
-    monkeyMenu.on(conf.describe || 'no describe', () => {
-      alert('当前匹配规则：\n' + JSON.stringify(conf.match, null, 2))
+    addMenu({
+      title: conf.describe || 'no describe',
+      disable: conf.disable || false,
+      fn: () => {
+        alert('当前匹配规则：\n' + JSON.stringify(conf.match, null, 2))
+      }
     })
   }
 }
@@ -113,13 +118,18 @@ function moduleSetup (mods) {
  * 脚本入口
  */
 function init () {
+  /* 注册菜单 */
+  menuRegister()
+
   /* 注册相关模块 */
   moduleSetup(modList)
 
   /* 运行任务队列 */
   runTaskMap(taskList)
 
-  waterMarkEraser()
-  registerDebuggerEraser()
+  /* 开启相关辅组插件 */
+  config.enhanceTools.waterMarkEraser && waterMarkEraser()
+  config.debugTools.debuggerEraser && registerDebuggerEraser()
+  config.debugTools.eruda && window.eruda && window.eruda.init()
 }
 init()
