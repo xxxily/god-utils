@@ -36,12 +36,12 @@ getPageWindow()
  * 注意同步获取的方式需要将脚本写入head，部分网站由于安全策略会导致写入失败，而无法正常获取
  * @returns {*}
  */
-function getPageWindowSync () {
+function getPageWindowSync (rawFunction) {
   if (document._win_) return document._win_
 
   try {
-    // eslint-disable-next-line no-new-func
-    return Function('return window')()
+    rawFunction = rawFunction || window.__rawFunction__ || Function.prototype.constructor
+    return rawFunction('return window')()
   } catch (e) {
     console.error('getPageWindowSync error', e)
 

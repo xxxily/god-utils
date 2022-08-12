@@ -212,12 +212,12 @@ getPageWindow();
  * 注意同步获取的方式需要将脚本写入head，部分网站由于安全策略会导致写入失败，而无法正常获取
  * @returns {*}
  */
-function getPageWindowSync () {
+function getPageWindowSync (rawFunction) {
   if (document._win_) return document._win_
 
   try {
-    // eslint-disable-next-line no-new-func
-    return Function('return window')()
+    rawFunction = rawFunction || window.__rawFunction__ || Function.prototype.constructor;
+    return rawFunction('return window')()
   } catch (e) {
     console.error('getPageWindowSync error', e);
 
@@ -1122,11 +1122,14 @@ window.__rawEval__ = window.eval;
 
 /**
  * 实现原理是对构建注入debugger匿名函数的文本进行检查，如果存在则对其进行移除
- * 相关文章：https://segmentfault.com/a/1190000012359015
+ * 相关文章：
+ * [突破前端反调试--阻止页面不断debugger](https://segmentfault.com/a/1190000012359015)
+ * [js检测开发者工具Devtools是否打开防调试](https://www.jianshu.com/p/82c70259364b)
  */
-function registerDebuggerEraser () {
-  window.__rawFunction__ = window.__rawFunction__ || Function.prototype.constructor;
-  window.__rawEval__ = window.__rawEval__ || window.eval;
+function registerDebuggerEraser (global) {
+  global = global || window;
+  global.__rawFunction__ = global.__rawFunction__ || Function.prototype.constructor;
+  global.__rawEval__ = global.__rawEval__ || global.eval;
 
   function hasDebuggerFeature (code) {
     return typeof code === 'string' && code.indexOf('debugger') > -1
@@ -1140,16 +1143,41 @@ function registerDebuggerEraser () {
         args[0] = args[0].replace(/debugger/g, '');
       }
 
+      /* 保存运行的字符串代码记录，以便查看都运行了哪些字符串代码 */
+      if (global._debugMode_) {
+        global.__eval_code_list__ = global.__eval_code_list__ || [];
+        if (global.__eval_code_list__.length < 500) {
+          global.__eval_code_list__.push(code);
+        }
+
+        /* 达到一定量时主动输出到控制台，以便查看 */
+        if (global.__eval_code_list__.length === 100) {
+          setTimeout(() => {
+            console.warn(`[debuggerEraser][__eval_code_list__]${global.location.href}`, global.__eval_code_list__);
+          }, 1500);
+        }
+      }
+
       return Reflect.apply(...arguments)
     }
   };
 
-  const FunctionProxy = new Proxy(window.__rawFunction__, proxyHandler);
-  window.Function = FunctionProxy;
-  window.Function.prototype.constructor = FunctionProxy;
+  const FunctionProxy = new Proxy(global.__rawFunction__, proxyHandler);
+  global.Function = FunctionProxy;
+  global.Function.prototype.constructor = FunctionProxy;
 
-  const evalProxy = new Proxy(window.__rawEval__, proxyHandler);
-  window.eval = evalProxy;
+  const evalProxy = new Proxy(global.__rawEval__, proxyHandler);
+  global.eval = evalProxy;
+
+  /* 尝试自动代理真实页面window对象下的相关方法属性 */
+  try {
+    const pageWin = getPageWindowSync(window.__rawFunction__);
+    if (pageWin && global !== pageWin && !pageWin.__rawFunction__) {
+      registerDebuggerEraser(pageWin);
+    }
+  } catch (e) {
+    console.error('[debuggerEraser][registerDebuggerEraser]', e);
+  }
 }
 
 /**
@@ -1628,6 +1656,6 @@ function init () {
   /* 运行任务队列 */
   runTaskMap(taskList);
 
-  debug$1.log('init success');
+  debug$1.log('init success, current config:', JSON.parse(JSON.stringify(config)));
 }
 init();

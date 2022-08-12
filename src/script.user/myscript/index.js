@@ -135,6 +135,6 @@ function init () {
   /* 运行任务队列 */
   runTaskMap(taskList)
 
-  debug.log('init success')
+  debug.log('init success, current config:', JSON.parse(JSON.stringify(config)))
 }
 init()
