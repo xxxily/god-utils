@@ -41,7 +41,9 @@ function getPageWindowSync (rawFunction) {
 
   try {
     rawFunction = rawFunction || window.__rawFunction__ || Function.prototype.constructor
-    return rawFunction('return window')()
+    // return rawFunction('return window')()
+    // Function('return (function(){}.constructor("return this")());')
+    return rawFunction('return (function(){}.constructor("return this")());')()
   } catch (e) {
     console.error('getPageWindowSync error', e)
 

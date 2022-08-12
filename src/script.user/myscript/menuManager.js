@@ -23,6 +23,13 @@ function refreshPage (msg) {
 
 let monkeyMenuList = [
   {
+    title: '还原默认配置',
+    fn: () => {
+      localStorage.removeItem('_myscriptConfig_')
+      refreshPage()
+    }
+  },
+  {
     title: config.enhanceTools.waterMarkEraser ? '关闭waterMarkEraser' : '开启waterMarkEraser',
     fn: () => {
       config.enhanceTools.waterMarkEraser = !config.enhanceTools.waterMarkEraser
@@ -33,6 +40,13 @@ let monkeyMenuList = [
     title: config.debugTools.debuggerEraser ? '关闭debuggerEraser' : '开启debuggerEraser',
     fn: () => {
       config.debugTools.debuggerEraser = !config.debugTools.debuggerEraser
+      refreshPage()
+    }
+  },
+  {
+    title: config.debugTools.timerManager ? '关闭timerManager' : '开启timerManager',
+    fn: () => {
+      config.debugTools.timerManager.enabled = !config.debugTools.timerManager.enabled
       refreshPage()
     }
   },

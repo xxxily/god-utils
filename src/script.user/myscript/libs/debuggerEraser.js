@@ -39,7 +39,9 @@ function registerDebuggerEraser (global) {
       if (global._debugMode_) {
         global.__eval_code_list__ = global.__eval_code_list__ || []
         if (global.__eval_code_list__.length < 500) {
-          global.__eval_code_list__.push(code)
+          if (code && code.length > 3) {
+            global.__eval_code_list__.push(code)
+          }
         }
 
         /* 达到一定量时主动输出到控制台，以便查看 */
@@ -50,7 +52,19 @@ function registerDebuggerEraser (global) {
         }
       }
 
-      return Reflect.apply(...arguments)
+      let evalResult = Reflect.apply(...arguments)
+
+      if (evalResult instanceof global.__rawFunction__) {
+        // code && args[0].length > 3 && console.warn('[debuggerEraser][evalResult][function]', code)
+        evalResult = new Proxy(evalResult, {
+          apply (target, ctx, args) {
+            // TODO 对eval函数的返回结果进行干预
+            return Reflect.apply(...arguments)
+          }
+        })
+      }
+
+      return evalResult
     }
   }
 
