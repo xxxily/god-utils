@@ -18,7 +18,7 @@ window.__rawEval__ = window.eval
  * [突破前端反调试--阻止页面不断debugger](https://segmentfault.com/a/1190000012359015)
  * [js检测开发者工具Devtools是否打开防调试](https://www.jianshu.com/p/82c70259364b)
  */
-function registerDebuggerEraser (global) {
+function registerDebuggerEraser (global, globalConfig = {}) {
   global = global || window
   global.__rawFunction__ = global.__rawFunction__ || Function.prototype.constructor
   global.__rawEval__ = global.__rawEval__ || global.eval
@@ -39,7 +39,7 @@ function registerDebuggerEraser (global) {
       if (global._debugMode_) {
         global.__eval_code_list__ = global.__eval_code_list__ || []
         if (global.__eval_code_list__.length < 500) {
-          if (code && code.length > 3) {
+          if (code && code.length > 3 && code.indexOf('debugger') === -1) {
             global.__eval_code_list__.push(code)
           }
         }
@@ -59,7 +59,20 @@ function registerDebuggerEraser (global) {
         evalResult = new Proxy(evalResult, {
           apply (target, ctx, args) {
             // TODO 对eval函数的返回结果进行干预
-            return Reflect.apply(...arguments)
+            const evalExecResult = Reflect.apply(...arguments)
+
+            /* 判断是否正在尝试通过eval、Function获取全新的window对象 */
+            if (evalExecResult && evalExecResult.document && evalExecResult.setInterval) {
+              if (code.indexOf('getPageWindowSync') > -1) {
+                /* 注意后面的getPageWindowSync也会产生evalResult，且此时的window对象还没完全被proxy */
+                console.log('[debuggerEraser][evalExecResult][getPageWindowSync]', evalExecResult, code)
+              } else {
+                // debugger
+                // TODO 对返回的window对象进行干预
+              }
+            }
+
+            return evalExecResult
           }
         })
       }

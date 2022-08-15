@@ -162,15 +162,18 @@ const defaultConfig = {
     /* 是否启用debugger消除插件 */
     debuggerEraser: true,
 
+    /* 代理console，防止console下的方法被重写后，而无法输出调试信息 */
+    consoleProxy: true,
+
     /* 时间管理器插件配置 */
     timerManager: {
-      enabled: true,
+      enabled: false,
       /* 当使用clearTimer的相关方法取消定时器时，是否继续保留计时器的相关信息 */
       keepTimerState: true,
       /* 阻断所有setInterval、setTimeout的调用 */
       blockAll: false,
-      /* 阻断上一次执行时长超过50ms的setInterval、setTimeout调用 */
-      blockLongTask: false,
+      /* 阻断上一次执行时长超过150ms的setInterval、setTimeout调用 */
+      blockLongTask: true,
       /* 修改计时器的比率，使其执行时间变快或变慢 */
       rate: 1
     }
@@ -232,7 +235,7 @@ function getPageWindowSync (rawFunction) {
     rawFunction = rawFunction || window.__rawFunction__ || Function.prototype.constructor;
     // return rawFunction('return window')()
     // Function('return (function(){}.constructor("return this")());')
-    return rawFunction('return (function(){}.constructor("return this")());')()
+    return rawFunction('var a="getPageWindowSync"; return (function(){}.constructor("return this")());')()
   } catch (e) {
     console.error('getPageWindowSync error', e);
 
@@ -1141,7 +1144,7 @@ window.__rawEval__ = window.eval;
  * [突破前端反调试--阻止页面不断debugger](https://segmentfault.com/a/1190000012359015)
  * [js检测开发者工具Devtools是否打开防调试](https://www.jianshu.com/p/82c70259364b)
  */
-function registerDebuggerEraser (global) {
+function registerDebuggerEraser (global, globalConfig = {}) {
   global = global || window;
   global.__rawFunction__ = global.__rawFunction__ || Function.prototype.constructor;
   global.__rawEval__ = global.__rawEval__ || global.eval;
@@ -1162,7 +1165,7 @@ function registerDebuggerEraser (global) {
       if (global._debugMode_) {
         global.__eval_code_list__ = global.__eval_code_list__ || [];
         if (global.__eval_code_list__.length < 500) {
-          if (code && code.length > 3) {
+          if (code && code.length > 3 && code.indexOf('debugger') === -1) {
             global.__eval_code_list__.push(code);
           }
         }
@@ -1182,7 +1185,17 @@ function registerDebuggerEraser (global) {
         evalResult = new Proxy(evalResult, {
           apply (target, ctx, args) {
             // TODO 对eval函数的返回结果进行干预
-            return Reflect.apply(...arguments)
+            const evalExecResult = Reflect.apply(...arguments);
+
+            /* 判断是否正在尝试通过eval、Function获取全新的window对象 */
+            if (evalExecResult && evalExecResult.document && evalExecResult.setInterval) {
+              if (code.indexOf('getPageWindowSync') > -1) {
+                /* 注意后面的getPageWindowSync也会产生evalResult，且此时的window对象还没完全被proxy */
+                console.log('[debuggerEraser][evalExecResult][getPageWindowSync]', evalExecResult, code);
+              }
+            }
+
+            return evalExecResult
           }
         });
       }
@@ -1257,8 +1270,9 @@ function registerTimerManager (global, config) {
         apply (timerFuncTarget, timerFuncCtx, timerFuncArgs) {
           /* 判断是否需要停止运行 */
           const lastDuration = timerState.execInfo.duration[timerState.execInfo.duration.length - 1];
-          if (lastDuration && lastDuration > 50 && config.blockLongTask) {
-            !timerState.blocked && console.warn('[timerManager]该函数执行时间过长，已被终止运行', timerState);
+          if (lastDuration && lastDuration > 150 && config.blockLongTask) {
+            // !timerState.blocked && console.warn('[timerManager]该函数执行时间过长，已被终止运行', timerState)
+            console.warn('[timerManager]该函数执行时间过长，已被终止运行', timerState);
             timerState.blocked = true;
             return false
           } else if (config.blockAll === true) {
@@ -1337,6 +1351,62 @@ function registerTimerManager (global, config) {
     }
   } catch (e) {
     console.error('[timerManager][registerTimerManager]', e);
+  }
+}
+
+/*!
+ * @name         consoleManager.js
+ * @description  控制台管理器，解决console被屏蔽的问题
+ * @version      0.0.1
+ * @author       xxxily
+ * @date         2022/08/15 16:55
+ * @github       https://github.com/xxxily
+ */
+
+function registerConsoleManager (global) {
+  try {
+    global = global || getPageWindowSync();
+    global.__rawConsole__ = global.__rawConsole__ || global.console;
+
+    function consoleMethodProxy (key) {
+      global.__rawConsole__[`__raw${key}__`] = global.__rawConsole__[key];
+      global.__rawConsole__[key] = new Proxy(global.__rawConsole__[key], {
+        apply (target, ctx, args) {
+          const rewriter = global.__rawConsole__.__rewriter__ || {};
+
+          /* 执行重写函数 */
+          if (rewriter[key] instanceof Function) {
+            rewriter[key].apply(ctx, args);
+          }
+
+          return Reflect.apply(target, ctx, args)
+        }
+      });
+    }
+
+    Object.keys(global.__rawConsole__).forEach(key => {
+      if (global.__rawConsole__[key] instanceof Function) {
+        consoleMethodProxy(key);
+      }
+    });
+
+    global.console = new Proxy(global.__rawConsole__, {
+      set (target, key, value) {
+        if (value instanceof Function && key !== '__rewriter__') {
+          global.__rawConsole__.warn('[consoleManager][detect the rewrite operation]', key, value);
+          global.__rawConsole__.__rewriter__ = global.__rawConsole__.__rewriter__ || {};
+          global.__rawConsole__.__rewriter__[key] = value;
+          return false
+        }
+
+        // 禁止重写
+        // return Reflect.set(target, key, value)
+      }
+    });
+
+    console.info('[consoleManager][register suc]', global.console);
+  } catch (e) {
+    console.error('[consoleManager]', e);
   }
 }
 
@@ -1652,7 +1722,14 @@ let monkeyMenuList = [
     }
   },
   {
-    title: config.debugTools.timerManager ? '关闭timerManager' : '开启timerManager',
+    title: config.debugTools.consoleProxy ? '关闭consoleProxy' : '开启consoleProxy',
+    fn: () => {
+      config.debugTools.consoleProxy = !config.debugTools.consoleProxy;
+      refreshPage();
+    }
+  },
+  {
+    title: config.debugTools.timerManager.enabled ? '关闭timerManager' : '开启timerManager',
     fn: () => {
       config.debugTools.timerManager.enabled = !config.debugTools.timerManager.enabled;
       refreshPage();
@@ -1816,9 +1893,10 @@ function moduleSetup (mods) {
 function init () {
   /* 开启相关辅组插件 */
   config.debugTools.debugModeTag && setDebugMode();
+  config.debugTools.consoleProxy && registerConsoleManager();
   config.debugTools.timerManager.enabled && registerTimerManager(window, config.debugTools.timerManager);
   config.enhanceTools.waterMarkEraser && waterMarkEraser();
-  config.debugTools.debuggerEraser && registerDebuggerEraser();
+  config.debugTools.debuggerEraser && registerDebuggerEraser(window, config);
   config.debugTools.eruda && window.eruda && window.eruda.init();
   config.debugTools.vconsole && window.VConsole && (new window.VConsole());
 

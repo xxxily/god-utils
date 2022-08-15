@@ -48,8 +48,9 @@ function registerTimerManager (global, config) {
         apply (timerFuncTarget, timerFuncCtx, timerFuncArgs) {
           /* 判断是否需要停止运行 */
           const lastDuration = timerState.execInfo.duration[timerState.execInfo.duration.length - 1]
-          if (lastDuration && lastDuration > 50 && config.blockLongTask) {
-            !timerState.blocked && console.warn('[timerManager]该函数执行时间过长，已被终止运行', timerState)
+          if (lastDuration && lastDuration > 150 && config.blockLongTask) {
+            // !timerState.blocked && console.warn('[timerManager]该函数执行时间过长，已被终止运行', timerState)
+            console.warn('[timerManager]该函数执行时间过长，已被终止运行', timerState)
             timerState.blocked = true
             return false
           } else if (config.blockAll === true) {

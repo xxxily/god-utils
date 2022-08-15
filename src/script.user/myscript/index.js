@@ -7,6 +7,7 @@ import modList from './module/index'
 import waterMarkEraser from './libs/waterMarkEraser'
 import { registerDebuggerEraser } from './libs/debuggerEraser'
 import { registerTimerManager } from './libs/timerManager'
+import { registerConsoleManager } from './libs/consoleManager'
 import taskList from './taskList'
 import { menuRegister, addMenu } from './menuManager'
 
@@ -122,9 +123,10 @@ function moduleSetup (mods) {
 function init () {
   /* 开启相关辅组插件 */
   config.debugTools.debugModeTag && setDebugMode()
+  config.debugTools.consoleProxy && registerConsoleManager()
   config.debugTools.timerManager.enabled && registerTimerManager(window, config.debugTools.timerManager)
   config.enhanceTools.waterMarkEraser && waterMarkEraser()
-  config.debugTools.debuggerEraser && registerDebuggerEraser()
+  config.debugTools.debuggerEraser && registerDebuggerEraser(window, config)
   config.debugTools.eruda && window.eruda && window.eruda.init()
   config.debugTools.vconsole && window.VConsole && (new window.VConsole())
 

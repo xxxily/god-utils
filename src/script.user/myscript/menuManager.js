@@ -44,7 +44,14 @@ let monkeyMenuList = [
     }
   },
   {
-    title: config.debugTools.timerManager ? '关闭timerManager' : '开启timerManager',
+    title: config.debugTools.consoleProxy ? '关闭consoleProxy' : '开启consoleProxy',
+    fn: () => {
+      config.debugTools.consoleProxy = !config.debugTools.consoleProxy
+      refreshPage()
+    }
+  },
+  {
+    title: config.debugTools.timerManager.enabled ? '关闭timerManager' : '开启timerManager',
     fn: () => {
       config.debugTools.timerManager.enabled = !config.debugTools.timerManager.enabled
       refreshPage()
