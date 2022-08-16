@@ -24,6 +24,11 @@ function registerConsoleManager (global) {
             rewriter[key].apply(ctx, args)
           }
 
+          /* 禁止clear的调用 */
+          if (key === 'clear') {
+            return false
+          }
+
           return Reflect.apply(target, ctx, args)
         }
       })

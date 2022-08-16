@@ -32,7 +32,10 @@ function registerDebuggerEraser (global, globalConfig = {}) {
       const code = args[0]
       if (hasDebuggerFeature(code)) {
         // console.warn('存在疑似的反调试代码，已对该代码进行屏蔽：', code)
-        args[0] = args[0].replace(/debugger/g, '')
+        // args[0] = args[0].replace(/debugger/g, '')
+
+        /* 抛出异常可以终止后续的代码执行，如果是循环检测，则可以终止掉循环 */
+        args[0] = args[0].replace(/debugger/g, ';throw new Error();')
       }
 
       /* 保存运行的字符串代码记录，以便查看都运行了哪些字符串代码 */
@@ -62,10 +65,17 @@ function registerDebuggerEraser (global, globalConfig = {}) {
       try {
         evalResult = Reflect.apply(...arguments)
       } catch (e) {
-        if (target.name === 'eval') {
-          console.error(`[debuggerEraser][${target.name}][error]`, '\n代理后eval只能获取到全局作用域，而要执行的代码字符串里却包含了局部作用域的变量，如果抛出了这个异常，基本都是这个原因。 \n参见：https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/eval \n', ...arguments, e)
+        global.__debuggerEraserErrorCount__ = global.__debuggerEraserErrorCount__ || 1
+        global.__debuggerEraserErrorCount__++
+
+        if (global.__debuggerEraserErrorCount__ > 50) {
+          global.__debuggerEraserErrorCount__ === 51 && console.error(`[debuggerEraser][${target.name}][error]`, '异常次数过多，不再输出相关错误', e)
         } else {
-          console.error(`[debuggerEraser][${target.name}][error]`, ...arguments, e)
+          if (target.name === 'eval') {
+            console.error(`[debuggerEraser][${target.name}][error]`, '\n代理后eval只能获取到全局作用域，而要执行的代码字符串里却包含了局部作用域的变量，如果抛出了这个异常，基本都是这个原因。 \n参见：https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/eval \n', ...arguments, code, e)
+          } else {
+            console.error(`[debuggerEraser][${target.name}][error]`, ...arguments, code, e)
+          }
         }
       }
 
@@ -141,11 +151,9 @@ function offDebuggerEraser (global) {
 // var check = function () {
 //   function doCheck (a) {
 //     if (('' + a / a).length !== 1 || a % 20 === 0) {
-//       (function () {}
-//         .constructor('debugger')())
+//       (function () {}.constructor('debugger')())
 //     } else {
-//       (function () {}
-//         .constructor('debugger')())
+//       (function () {}.constructor('debugger')())
 //     }
 //     doCheck(++a)
 //   }
@@ -156,6 +164,9 @@ function offDebuggerEraser (global) {
 // check()
 
 /**
+ * 可生产调试保护代码的在线工具
+ * https://www.json.cn/json/jshx.html
+ *
  * 存在反调试代码实例的相关网址
  * http://www.sc.10086.cn/service/login.html
  * https://photokit.com/editor/?lang=zh

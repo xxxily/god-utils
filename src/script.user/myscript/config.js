@@ -9,7 +9,7 @@ const defaultConfig = {
     eruda: false,
     vconsole: false,
     /* 是否启用debugger消除插件 */
-    debuggerEraser: true,
+    debuggerEraser: false,
 
     /* 代理console，防止console下的方法被重写后，而无法输出调试信息 */
     consoleProxy: true,
