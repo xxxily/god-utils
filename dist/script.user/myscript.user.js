@@ -1130,7 +1130,7 @@ function waterMarkEraser (shadowRoot) {
  * @description  移除反调试的debugger字符串，让网站可正常启动调试工具
  * @version      0.0.1
  * @author       xxxily
- * @date         2022/05/25 14:03
+ * @date         2022/08/10 14:03
  * @github       https://github.com/xxxily
  */
 
@@ -1189,26 +1189,20 @@ function registerDebuggerEraser (global, globalConfig = {}) {
         evalResult = Reflect.apply(...arguments);
       } catch (e) {
         if (target.name === 'eval') {
-          console.error('[debuggerEraser][eval][error]', '\n代理后eval只能获取到全局作用域，而要执行的代码字符串里却包含了局部作用域的变量，如果抛出了这个异常，基本都是这个原因。 \n参见：https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/eval \n', ...arguments, e);
+          console.error(`[debuggerEraser][${target.name}][error]`, '\n代理后eval只能获取到全局作用域，而要执行的代码字符串里却包含了局部作用域的变量，如果抛出了这个异常，基本都是这个原因。 \n参见：https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/eval \n', ...arguments, e);
         } else {
-          console.error('[debuggerEraser][error]', ...arguments, e);
+          console.error(`[debuggerEraser][${target.name}][error]`, ...arguments, e);
         }
       }
 
       if (evalResult instanceof global.__rawFunction__) {
-        // code && args[0].length > 3 && console.warn('[debuggerEraser][evalResult][function]', code)
         evalResult = new Proxy(evalResult, {
           apply (target, ctx, args) {
-            // TODO 对eval函数的返回结果进行干预
+            // TODO 对返回结果进行干预
             const evalExecResult = Reflect.apply(...arguments);
 
             /* 判断是否正在尝试通过eval、Function获取全新的window对象 */
-            if (evalExecResult && evalExecResult.document && evalExecResult.setInterval) {
-              if (code.indexOf('getPageWindowSync') > -1) {
-                /* 注意后面的getPageWindowSync也会产生evalResult，且此时的window对象还没完全被proxy */
-                console.log('[debuggerEraser][evalExecResult][getPageWindowSync]', evalExecResult, code);
-              }
-            }
+            if (evalExecResult && evalExecResult.document && evalExecResult.setInterval) ;
 
             return evalExecResult
           }
