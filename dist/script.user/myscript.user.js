@@ -235,7 +235,7 @@ function getPageWindowSync (rawFunction) {
     rawFunction = rawFunction || window.__rawFunction__ || Function.prototype.constructor;
     // return rawFunction('return window')()
     // Function('return (function(){}.constructor("return this")());')
-    return rawFunction('var a="getPageWindowSync"; return (function(){}.constructor("return this")());')()
+    return rawFunction('return (function(){}.constructor("var getPageWindowSync=1; return this")());')()
   } catch (e) {
     console.error('getPageWindowSync error', e);
 
@@ -1178,7 +1178,22 @@ function registerDebuggerEraser (global, globalConfig = {}) {
         }
       }
 
-      let evalResult = Reflect.apply(...arguments);
+      /* getPageWindowSync标识 */
+      if (code.indexOf('getPageWindowSync=1') > -1) {
+        return Reflect.apply(...arguments)
+      }
+
+      let evalResult = null;
+
+      try {
+        evalResult = Reflect.apply(...arguments);
+      } catch (e) {
+        if (target.name === 'eval') {
+          console.error('[debuggerEraser][eval][error]', '\n代理后eval只能获取到全局作用域，而要执行的代码字符串里却包含了局部作用域的变量，如果抛出了这个异常，基本都是这个原因。 \n参见：https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/eval \n', ...arguments, e);
+        } else {
+          console.error('[debuggerEraser][error]', ...arguments, e);
+        }
+      }
 
       if (evalResult instanceof global.__rawFunction__) {
         // code && args[0].length > 3 && console.warn('[debuggerEraser][evalResult][function]', code)
@@ -1208,6 +1223,12 @@ function registerDebuggerEraser (global, globalConfig = {}) {
   global.Function = FunctionProxy;
   global.Function.prototype.constructor = FunctionProxy;
 
+  /**
+   * 直接调用eval能获取到局部作用域中的变量，而通过代理后的eval将变成间接调用，此时只能获取全局作用域中的变量
+   * 这个特性导致了对eval进行代理，容易出现执行异常，导致网页运行异常
+   * 具体说明参见下述文档：
+   * https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/eval
+   */
   const evalProxy = new Proxy(global.__rawEval__, proxyHandler);
   global.eval = evalProxy;
 
