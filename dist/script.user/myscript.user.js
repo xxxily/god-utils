@@ -1401,7 +1401,7 @@ function registerConsoleManager (global) {
 
           /* 执行重写函数 */
           if (rewriter[key] instanceof Function) {
-            rewriter[key].apply(ctx, args);
+            // rewriter[key].apply(ctx, args)
           }
 
           /* 禁止clear的调用 */
@@ -1426,10 +1426,14 @@ function registerConsoleManager (global) {
           global.__rawConsole__.warn('[consoleManager][detect the rewrite operation]', key, value);
           global.__rawConsole__.__rewriter__ = global.__rawConsole__.__rewriter__ || {};
           global.__rawConsole__.__rewriter__[key] = value;
-          return false
+
+          /**
+           * 禁止重写，必须返回true，否则在严格模式下会如下类型的错误：
+           * Uncaught TypeError: 'set' on proxy: trap returned falsish for property 'xxx'
+           */
+          return true
         }
 
-        // 禁止重写
         // return Reflect.set(target, key, value)
       }
     });
