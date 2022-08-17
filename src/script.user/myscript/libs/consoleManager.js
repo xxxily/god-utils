@@ -21,6 +21,10 @@ function registerConsoleManager (global) {
 
           /* 执行重写函数 */
           if (rewriter[key] instanceof Function) {
+            /**
+             * TODO: https://www.magiceraser.io/ 网址执行重写函数会导致死循环错误
+             * 待优化
+             */
             // rewriter[key].apply(ctx, args)
           }
 
