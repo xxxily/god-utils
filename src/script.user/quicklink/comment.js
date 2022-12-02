@@ -7,7 +7,7 @@
 // @name:ko      웹 액세스 가속기
 // @name:de      Webzugriffsbeschleuniger
 // @namespace    https://github.com/xxxily
-// @version      2.3.0
+// @version      1.0.0
 // @description  基于谷歌quicklink的网页访问加速器，加快网页打开速度，提升浏览体验
 // @description:en Web page access accelerator based on Google quicklink to speed up the opening of web pages and improve browsing experience
 // @description:zh 基于谷歌quicklink的网页访问加速器，加快网页打开速度，提升浏览体验
