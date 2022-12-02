@@ -9,6 +9,7 @@
     "rollup": "rollup -w -c config/rollup.config.js",
     "myscript02:prod": "npm run rollup --mode-dev --proj-myscript02",
     "myscript:prod": "npm run rollup --mode-dev --proj-myscript",
+    "quicklink:prod": "npm run rollup --mode-dev --proj-quicklink",
     "sw:prod": "npm run rollup --mode-dev --proj-sw",
     "server": "node bin/staticService/index.js"
   },

@@ -1930,6 +1930,8 @@ function addMenu (menuOpts) {
   menuOpts = menuOpts.filter(item => item.title && !item.disabled);
   monkeyMenuList = monkeyMenuList.concat(menuOpts);
 
+  console.log('[monkeyMenuList]', monkeyMenuList);
+
   /* 重新注册菜单 */
   menuRegister();
 }

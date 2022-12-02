@@ -32,6 +32,16 @@ const confTree = {
       name: 'myscript02'
     }
   },
+  quicklink: {
+    version: '2.3.0',
+    description: 'quicklink',
+    input: resolve('src/script.user/quicklink/index.js'),
+    output: {
+      file: resolve('dist/script.user/quicklink.user.js'),
+      format: 'es',
+      name: 'quicklink'
+    }
+  },
   sw: {
     version: '0.0.1',
     description: 'Service Workers Demo',
