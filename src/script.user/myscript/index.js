@@ -10,6 +10,8 @@ import { registerTimerManager } from './libs/timerManager'
 import { registerConsoleManager } from './libs/consoleManager'
 import taskList from './taskList'
 import { menuRegister, addMenu } from './menuManager'
+import { initEruda, initVconsole } from './helper'
+import { getTabId } from './getId'
 
 /* 劫持localStorage.setItem 方法，增加修改监听功能 */
 const orignalLocalStorageSetItem = localStorage.setItem
@@ -120,15 +122,29 @@ function moduleSetup (mods) {
 /**
  * 脚本入口
  */
-function init () {
+async function init (retryCount = 0) {
+  if (!window.document.documentElement) {
+    setTimeout(() => {
+      if (retryCount < 200) {
+        init(retryCount + 1)
+      } else {
+        console.error('[myscript message:]', 'not documentElement detected!', window)
+      }
+    }, 10)
+
+    return false
+  } else if (retryCount > 0) {
+    console.warn('[myscript message:]', 'documentElement detected!', retryCount, window)
+  }
+
   /* 开启相关辅组插件 */
   config.debugTools.debugModeTag && setDebugMode()
   config.debugTools.consoleProxy && registerConsoleManager()
   config.debugTools.timerManager.enabled && registerTimerManager(window, config.debugTools.timerManager)
   config.enhanceTools.waterMarkEraser && waterMarkEraser()
   config.debugTools.debuggerEraser && registerDebuggerEraser(window, config)
-  config.debugTools.eruda && window.eruda && window.eruda.init()
-  config.debugTools.vconsole && window.VConsole && (new window.VConsole())
+  config.debugTools.eruda && initEruda()
+  config.debugTools.vconsole && initVconsole()
 
   /* 注册菜单 */
   menuRegister()
@@ -139,6 +155,7 @@ function init () {
   /* 运行任务队列 */
   runTaskMap(taskList)
 
+  debug.log(`[${location.href}]`, window, await getTabId())
   debug.log('init success, current config:', JSON.parse(JSON.stringify(config)))
 }
 init()

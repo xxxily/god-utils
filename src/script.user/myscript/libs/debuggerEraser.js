@@ -166,6 +166,7 @@ function offDebuggerEraser (global) {
 /**
  * 可生产调试保护代码的在线工具
  * https://www.json.cn/json/jshx.html
+ * https://www.jsjiami.com/
  *
  * 存在反调试代码实例的相关网址
  * http://www.sc.10086.cn/service/login.html

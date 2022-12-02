@@ -27,7 +27,5 @@
 // @license      GPL
 // @run-at       document-start
 // @updateURL    https://github.com/xxxily/god-utils/raw/master/dist/script.user/myscript.user.js
-// @require      https://cdn.jsdelivr.net/npm/eruda@2.5.0/eruda.min.js
-// @require      https://cdn.jsdelivr.net/npm/vconsole@3.14.6/dist/vconsole.min.js
 // ==/UserScript==
 (function (w) { if (w) { w.name = 'myscript' } })()

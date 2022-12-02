@@ -8,6 +8,15 @@ import debug from './debug'
  */
 const taskList = [
   {
+    match: 'douyin.com',
+    describe: '抖音网页版体验优化',
+    run: function () {
+      ready('#videoSideBar .recommend-comment-login-mask', function (element) {
+        element.style.display = 'none'
+      })
+    }
+  },
+  {
     match: 'youtube.com',
     describe: '自动跳过youtube广告',
     run: function () {

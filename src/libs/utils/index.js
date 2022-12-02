@@ -12,6 +12,7 @@ import { isInIframe, isInCrossOriginFrame } from './iframe'
 import { throttle } from './throttle'
 import { parseURL, stringifyParams, stringifyToUrl } from './url'
 import copyText from './copyText'
+import { loadFile, loadScript, loadCss, loadIframe } from './loadFile'
 
 export {
   ready,
@@ -49,5 +50,9 @@ export {
   copyText,
   parseURL,
   stringifyParams,
-  stringifyToUrl
+  stringifyToUrl,
+  loadFile,
+  loadScript,
+  loadCss,
+  loadIframe
 }

@@ -27,8 +27,6 @@
 // @license      GPL
 // @run-at       document-start
 // @updateURL    https://github.com/xxxily/god-utils/raw/master/dist/script.user/myscript.user.js
-// @require      https://cdn.jsdelivr.net/npm/eruda@2.5.0/eruda.min.js
-// @require      https://cdn.jsdelivr.net/npm/vconsole@3.14.6/dist/vconsole.min.js
 // ==/UserScript==
 (function (w) { if (w) { w.name = 'myscript'; } })();
 
@@ -229,6 +227,7 @@ getPageWindow();
  * @returns {*}
  */
 function getPageWindowSync (rawFunction) {
+  if (window.unsafeWindow) return window.unsafeWindow
   if (document._win_) return document._win_
 
   try {
@@ -494,6 +493,103 @@ function copyText (text = '') {
   return sucStatus
 }
 
+/*!
+ * @name         loadScript.js
+ * @description  用于动态加载为外部文件
+ * @version      0.0.1
+ * @author       Blaze
+ * @date         12/08/2019 10:21
+ * @github       https://github.com/xxxily
+ */
+const callbacks = {};
+
+/**
+ * 动态加载外部文件
+ * @param type {String} -必选 要加载的文件类型，支持： script, link, iframe 三种类型标志
+ * @param src {String} -必选 外部文件的地址
+ * @param callback {Function} -必选 加载成功或失败时的回调
+ * @param beforeAppend {Function} -可选 插入DOM执行加载动作前的钩子函数 一般iframe才需要此函数，执行提前处理好样式等操作
+ * @param appendDom {el} -可选 指定将文件插入到哪个DOM里面，一般iframe才会使用此选项，不指定都是按默认规则插入
+ */
+function loadFile (type, src, callback, beforeAppend, appendDom) {
+  if (!type || !/^(script|link|iframe)$/.test(type)) return false
+
+  const existing = document.getElementById(src);
+  const cb = callback || function () {};
+
+  /* 每个链接有自己对应的回调队列 */
+  if (!callbacks[src]) {
+    callbacks[src] = [];
+  }
+
+  if (existing && existing._isLoaded_) {
+    cb(null, existing);
+  } else {
+    callbacks[src].push(cb);
+  }
+
+  function handler (isSuc, el) {
+    /* 执行回调队列 */
+    for (const cb of callbacks[src]) {
+      isSuc ? cb(null, el) : cb(new Error('Failed to load ' + src), el);
+    }
+
+    el.onerror = el.onload = el.onreadystatechange = null;
+    delete callbacks[src];
+
+    if (isSuc) {
+      el._isLoaded_ = true;
+    } else {
+      /* 移除加载出错脚本，以便下个执行的函数可以尝试继续加载 */
+      el.parentElement.removeChild(el);
+    }
+  }
+
+  if (!existing) {
+    /* 生成并注入脚本标签 */
+    const el = document.createElement(type);
+    el.id = src;
+
+    /* 使用正确的连接属性 */
+    if (/^(script|iframe)$/.test(type)) {
+      el.src = src;
+    } else {
+      el.type = 'text/css';
+      el.rel = 'stylesheet';
+      el.href = src;
+    }
+
+    /* 获得正确的插入节点 */
+    if (!appendDom || !appendDom.appendChild) {
+      if (/^(script|link)$/.test(type)) {
+        appendDom = document.getElementsByTagName('head')[0] || document.body;
+      } else {
+        appendDom = document.body;
+      }
+    }
+
+    /* 处理相关事件 */
+    el.onload = el.onreadystatechange = function () {
+      if (!el._isLoaded_ && (!this.readyState || this.readyState === 'complete')) {
+        handler(true, el);
+      }
+    };
+
+    el.onerror = function () {
+      handler(false, el);
+    };
+
+    if (beforeAppend instanceof Function) {
+      beforeAppend(el, src);
+    }
+
+    /* 插入到dom元素，执行加载操作 */
+    appendDom.appendChild(el);
+  }
+}
+
+const loadScript = (src, callback) => loadFile('script', src, callback);
+
 class Debug {
   constructor (msg) {
     const t = this;
@@ -583,6 +679,10 @@ const debug$1 = Debug$1.create('myscript message:');
 const monkeyMenu = {
   menuIds: {},
   on (title, fn, accessKey) {
+    if (title instanceof Function) {
+      title = title();
+    }
+
     if (window.GM_registerMenuCommand) {
       const menuId = window.GM_registerMenuCommand(title, fn, accessKey);
 
@@ -599,7 +699,13 @@ const monkeyMenu = {
   off (id) {
     if (window.GM_unregisterMenuCommand) {
       delete this.menuIds[id];
-      return window.GM_unregisterMenuCommand(id)
+
+      /**
+       * 批量移除已注册的按钮时，在某些性能较差的机子上会留下数字title的菜单残留
+       * 应该属于插件自身导致的BUG，暂时无法解决
+       * 所以此处暂时不进行菜单移除，tampermonkey会自动对同名菜单进行合并
+       */
+      // return window.GM_unregisterMenuCommand(id)
     }
   },
 
@@ -1410,7 +1516,7 @@ function registerConsoleManager (global) {
 
           /* 禁止clear的调用 */
           if (key === 'clear') {
-            return false
+            return true
           }
 
           return Reflect.apply(target, ctx, args)
@@ -1505,6 +1611,15 @@ function millisecondToDate (msd, retuenDefText) {
  * @type {[*]}
  */
 const taskList = [
+  {
+    match: 'douyin.com',
+    describe: '抖音网页版体验优化',
+    run: function () {
+      ready('#videoSideBar .recommend-comment-login-mask', function (element) {
+        element.style.display = 'none';
+      });
+    }
+  },
   {
     match: 'youtube.com',
     describe: '自动跳过youtube广告',
@@ -1819,6 +1934,64 @@ function addMenu (menuOpts) {
   menuRegister();
 }
 
+function initEruda () {
+  if (!window.eruda) {
+    loadScript('https://cdn.jsdelivr.net/npm/eruda@2.5.0/eruda.min.js', () => {
+      if (window.eruda) {
+        window.eruda.init();
+      } else {
+        debug$1.error('eruda init failed');
+      }
+    });
+  } else {
+    window.eruda.init();
+  }
+}
+
+function initVconsole () {
+  if (!window.VConsole) {
+    loadScript('https://cdn.jsdelivr.net/npm/vconsole@3.14.6/dist/vconsole.min.js', () => {
+      if (window.VConsole) {
+        // eslint-disable-next-line no-new
+        new window.VConsole();
+      } else {
+        debug$1.error('vconsole init failed');
+      }
+    });
+  } else {
+    // eslint-disable-next-line no-new
+    new window.VConsole();
+  }
+}
+
+/* 用于获取全局唯一的id */
+function getId () {
+  let gID = window.GM_getValue('_global_id_');
+  if (!gID) gID = 0;
+  gID = Number(gID) + 1;
+  window.GM_setValue('_global_id_', gID);
+  return gID
+}
+
+/**
+ * 获取当前TAB标签的Id号，可用于iframe确定自己是否处于同一TAB标签下
+ * @returns {Promise<any>}
+ */
+function getTabId () {
+  return new Promise((resolve, reject) => {
+    window.GM_getTab(function (obj) {
+      if (!obj.tabId) {
+        obj.tabId = getId();
+        window.GM_saveTab(obj);
+      }
+      resolve(obj.tabId);
+    });
+  })
+}
+
+/* 一开始就初始化好curTabId，这样后续就不需要异步获取Tabid，部分场景下需要用到 */
+getTabId();
+
 /* 劫持localStorage.setItem 方法，增加修改监听功能 */
 const orignalLocalStorageSetItem = localStorage.setItem;
 localStorage.setItem = function (key, newValue) {
@@ -1928,15 +2101,29 @@ function moduleSetup (mods) {
 /**
  * 脚本入口
  */
-function init () {
+async function init (retryCount = 0) {
+  if (!window.document.documentElement) {
+    setTimeout(() => {
+      if (retryCount < 200) {
+        init(retryCount + 1);
+      } else {
+        console.error('[myscript message:]', 'not documentElement detected!', window);
+      }
+    }, 10);
+
+    return false
+  } else if (retryCount > 0) {
+    console.warn('[myscript message:]', 'documentElement detected!', retryCount, window);
+  }
+
   /* 开启相关辅组插件 */
   config.debugTools.debugModeTag && setDebugMode();
   config.debugTools.consoleProxy && registerConsoleManager();
   config.debugTools.timerManager.enabled && registerTimerManager(window, config.debugTools.timerManager);
   config.enhanceTools.waterMarkEraser && waterMarkEraser();
   config.debugTools.debuggerEraser && registerDebuggerEraser(window, config);
-  config.debugTools.eruda && window.eruda && window.eruda.init();
-  config.debugTools.vconsole && window.VConsole && (new window.VConsole());
+  config.debugTools.eruda && initEruda();
+  config.debugTools.vconsole && initVconsole();
 
   /* 注册菜单 */
   menuRegister();
@@ -1947,6 +2134,7 @@ function init () {
   /* 运行任务队列 */
   runTaskMap(taskList);
 
+  debug$1.log(`[${location.href}]`, window, await getTabId());
   debug$1.log('init success, current config:', JSON.parse(JSON.stringify(config)));
 }
 init();

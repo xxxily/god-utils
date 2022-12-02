@@ -37,6 +37,7 @@ getPageWindow()
  * @returns {*}
  */
 function getPageWindowSync (rawFunction) {
+  if (window.unsafeWindow) return window.unsafeWindow
   if (document._win_) return document._win_
 
   try {

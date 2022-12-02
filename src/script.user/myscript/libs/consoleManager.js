@@ -30,7 +30,7 @@ function registerConsoleManager (global) {
 
           /* 禁止clear的调用 */
           if (key === 'clear') {
-            return false
+            return true
           }
 
           return Reflect.apply(target, ctx, args)
