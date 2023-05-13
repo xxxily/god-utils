@@ -1,5 +1,6 @@
 import ready from '../../libs/utils/ready'
 import millisecondToDate from '../../libs/utils/millisecondToDate'
+import downloadJsonFile from '../../libs/utils/downloadJsonFile'
 import debug from './debug'
 
 /**
@@ -225,6 +226,74 @@ const taskList = [
           readMore && (readMore.style.visibility = 'hidden')
         }, 1000)
       })
+    }
+  },
+
+  {
+    match: 'yiyan.baidu.com',
+    describe: '文心去水印',
+    run: function () {
+      ready('#root', function (element) {
+        // alert('文心去水印');
+        setTimeout(() => {
+          element.style.zIndex = '99999999999'
+          element.style.position = 'fixed'
+          element.style.top = '0'
+          element.style.left = '0'
+          element.style.width = '100%'
+          element.style.height = '100%'
+          element.style.backgroundColor = 'rgba(0, 0, 0, 1)'
+        }, 1000)
+      })
+    }
+  },
+
+  {
+    match: 'processon.com',
+    describe: 'ProcessOn模版下载',
+    run: function () {
+      async function downloadPos () {
+        /* 发起get请求 */
+        const id = location.pathname.replace('/view/', '')
+        const url = `https://www.processon.com/api/personal/diagraming/getdef?id=${id}`
+        const res = await fetch(url)
+        const data = await res.json()
+        const elements = JSON.parse(data.data.def)
+
+        const posJson = {
+          diagram: {
+            elements
+          },
+          meta: {
+            exportTime: '',
+            member: '',
+            diagramInfo: {
+              creator: '',
+              created: '',
+              modified: '',
+              title: elements.title,
+              category: 'mind_free'
+            },
+            id: '',
+            type: 'ProcessOn Schema File',
+            version: '1.0'
+          }
+        }
+
+        console.log(`[diagraming.pos][${elements.title}]`, posJson)
+        downloadJsonFile(`${elements.title}.pos`, posJson)
+        // alert('请在控制台查看数据')
+      }
+
+      if (location.href.includes('processon.com/view/')) {
+        ready('.main-content .file_head_right', function (element) {
+          const downBtn = document.createElement('button')
+          downBtn.className = 'button file_head_right_item'
+          downBtn.innerText = '下载POS文件'
+          downBtn.addEventListener('click', downloadPos)
+          element.appendChild(downBtn)
+        })
+      }
     }
   }
 ]

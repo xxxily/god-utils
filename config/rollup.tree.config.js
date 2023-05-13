@@ -42,6 +42,16 @@ const confTree = {
       name: 'quicklink'
     }
   },
+  webrecord: {
+    version: '0.0.1',
+    description: 'webrecord',
+    input: resolve('src/script.user/web-record/index.js'),
+    output: {
+      file: resolve('dist/script.user/web-record.user.js'),
+      format: 'es',
+      name: 'webrecord'
+    }
+  },
   sw: {
     version: '0.0.1',
     description: 'Service Workers Demo',
