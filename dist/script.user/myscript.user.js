@@ -1642,6 +1642,16 @@ const taskList = [
   },
 
   {
+    match: 'youtube.com',
+    describe: '隐藏油管Logo',
+    run: function () {
+      ready('#logo', function (element) {
+        element.style.opacity = 0.1;
+      });
+    }
+  },
+
+  {
     match: 'wenxuecity.com',
     describe: '忽略文学城弹框',
     run: function () {
