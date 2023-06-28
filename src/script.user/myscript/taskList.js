@@ -33,6 +33,14 @@ const taskList = [
     run: function () {
       ready('#logo', function (element) {
         element.style.opacity = 0.1
+
+        element.addEventListener('mouseenter', function () {
+          element.style.opacity = 0.8
+        })
+
+        element.addEventListener('mouseleave', function () {
+          element.style.opacity = 0.1
+        })
       })
     }
   },
