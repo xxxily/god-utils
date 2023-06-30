@@ -1,7 +1,8 @@
 import ready from '../../libs/utils/ready'
-import millisecondToDate from '../../libs/utils/millisecondToDate'
+// import millisecondToDate from '../../libs/utils/millisecondToDate'
 import downloadJsonFile from '../../libs/utils/downloadJsonFile'
 import debug from './debug'
+import { elementWeakened } from './helper'
 
 /**
  * 任务队列
@@ -32,15 +33,23 @@ const taskList = [
     describe: '隐藏油管Logo',
     run: function () {
       ready('#logo', function (element) {
-        element.style.opacity = 0.1
+        elementWeakened(element)
+      })
+    }
+  },
 
-        element.addEventListener('mouseenter', function () {
-          element.style.opacity = 0.8
-        })
+  {
+    match: 'google.com',
+    describe: 'Google优化',
+    run: function () {
+      ready('img[alt=Google]', function (element) {
+        elementWeakened(element)
+      })
 
-        element.addEventListener('mouseleave', function () {
-          element.style.opacity = 0.1
-        })
+      ready('div.logo', function (element) {
+        if (element.querySelector('img[alt=Google]')) {
+          elementWeakened(element)
+        }
       })
     }
   },
@@ -55,44 +64,6 @@ const taskList = [
           document.body.style.position = 'inherit'
         }, 120)
       })
-    }
-  },
-
-  {
-    match: [
-      'https://fort.qiweioa.cn/#/login',
-      'https://fort.qiweioa.cn/#/desktop'
-    ],
-    describe: '云匣子自动刷新，防止长时间无操作自动退出登录',
-    run: function () {
-      const curTime = Date.now()
-      const reloadInterval = 10
-      console.log('云匣子自动刷新脚本已注入，刷新频率：' + reloadInterval + '分钟')
-      setTimeout(function () {
-        window.location.reload()
-      }, 1000 * 60 * reloadInterval)
-
-      setInterval(function () {
-        console.log('当前页面已运行：' + millisecondToDate(Date.now() - curTime, true))
-      }, 1000 * 30)
-    }
-  },
-
-  {
-    match: 'https://fort.qiweioa.cn/connect.html',
-    describe: '云匣子控制台自动重连',
-    run: function () {
-      const curTime = Date.now()
-      let reconnectCount = 0
-      setInterval(function () {
-        console.log('当前页面已运行：' + millisecondToDate(Date.now() - curTime, true))
-        const confirmBtn = document.querySelector('.yab-proxy-messagebox .confirmButtonCls')
-        if (confirmBtn && confirmBtn.innerText === '重新连接') {
-          confirmBtn.click()
-          reconnectCount += 1
-          console.log('控制台已重新连接，重连次数：' + reconnectCount)
-        }
-      }, 1000 * 30)
     }
   },
 

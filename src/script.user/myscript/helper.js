@@ -30,3 +30,18 @@ export function initVconsole () {
     new window.VConsole()
   }
 }
+
+/* 弱化元素的显示 */
+export function elementWeakened (el) {
+  if (!el || !el.style) return
+
+  el.style.opacity = 0.1
+
+  el.addEventListener('mouseenter', function () {
+    el.style.opacity = 0.8
+  })
+
+  el.addEventListener('mouseleave', function () {
+    el.style.opacity = 0.1
+  })
+}
