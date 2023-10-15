@@ -1633,7 +1633,17 @@ const taskList = [
       });
     }
   },
-
+  {
+    match: 'youtube.com',
+    describe: '自动跳过开启广告展示的弹窗提醒',
+    run: function () {
+      ready('tp-yt-paper-dialog.ytd-popup-container', function (element) {
+        if (element.innerText.includes('广告拦截')) {
+          element.parentNode.removeChild(element);
+        }
+      });
+    }
+  },
   {
     match: 'youtube.com',
     describe: '隐藏油管Logo',
