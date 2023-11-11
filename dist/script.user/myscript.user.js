@@ -1622,6 +1622,29 @@ const taskList = [
       ready('#videoSideBar .recommend-comment-login-mask', function (element) {
         element.style.display = 'none';
       });
+
+      ready('.video-info-detail', function (element) {
+        // element.style.display = 'none'
+        const videoInfoList = document.querySelectorAll('.video-info-detail');
+        if (!videoInfoList || videoInfoList.length === 0) {
+          return false
+        }
+
+        const videoInfo = videoInfoList.length - 2 >= 0 ? videoInfoList[videoInfoList.length - 2] : videoInfoList[0];
+
+        const accountNameEL = videoInfo.querySelector('.account-name');
+        /* 移除accountName前面的@符号 */
+        const accountName = accountNameEL.innerText.replace(/^@*/, '');
+
+        const titleEl = videoInfo.querySelector('.title');
+        const title = titleEl.innerText.trim();
+        document.title = `${title} - ${accountName}`;
+
+        /* 将document.title包含不符合文件系统命名规范的字符替换为空格 */
+        document.title = document.title.replace(/[\\/:*?"<>|]/g, '-');
+
+        console.log('[title]', document.title);
+      });
     }
   },
   {
@@ -1629,6 +1652,10 @@ const taskList = [
     describe: '自动跳过youtube广告',
     run: function () {
       ready('.ytp-ad-skip-button', function (element) {
+        element.click();
+      });
+
+      ready('.ytp-ad-skip-button-modern', function (element) {
         element.click();
       });
     }
@@ -1642,6 +1669,14 @@ const taskList = [
           element.parentNode.removeChild(element);
         }
       });
+
+      setInterval(function () {
+        document.querySelectorAll('tp-yt-paper-dialog.ytd-popup-container').forEach(function (element) {
+          if (element.innerText.includes('广告拦截')) {
+            element.parentNode.removeChild(element);
+          }
+        });
+      }, 600);
     }
   },
   {
