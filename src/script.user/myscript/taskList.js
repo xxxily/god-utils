@@ -10,21 +10,26 @@ import { elementWeakened } from './helper'
  */
 const taskList = [
   {
+    match: 'meta.appinn.net',
+    describe: '小众软件体验优化',
+    run: function () {
+      ready('section#d-splash', function (element) {
+        element.remove()
+      })
+    }
+  },
+  {
     match: 'douyin.com',
     describe: '抖音网页版体验优化',
     run: function () {
-      ready('#videoSideBar .recommend-comment-login-mask', function (element) {
-        element.style.display = 'none'
-      })
+      /* 为当前视频设置正确的标题 */
+      function setVideoTitle (videoWrapEl) {
+        const videoInfo = videoWrapEl.querySelector('.video-info-detail')
 
-      ready('.video-info-detail', function (element) {
-        // element.style.display = 'none'
-        const videoInfoList = document.querySelectorAll('.video-info-detail')
-        if (!videoInfoList || videoInfoList.length === 0) {
-          return false
+        if (videoInfo.documentTitle) {
+          document.title = videoInfo.documentTitle
+          return
         }
-
-        const videoInfo = videoInfoList.length - 2 >= 0 ? videoInfoList[videoInfoList.length - 2] : videoInfoList[0]
 
         const accountNameEL = videoInfo.querySelector('.account-name')
         /* 移除accountName前面的@符号 */
@@ -32,47 +37,121 @@ const taskList = [
 
         const titleEl = videoInfo.querySelector('.title')
         const title = titleEl.innerText.trim()
-        document.title = `${title} - ${accountName}`
 
         /* 将document.title包含不符合文件系统命名规范的字符替换为空格 */
-        document.title = document.title.replace(/[\\/:*?"<>|]/g, '-')
+        const documentTitle = `${title} - ${accountName}`.replace(/[\\/:*?"<>|]/g, '-')
 
-        console.log('[title]', document.title)
-      })
-    }
-  },
-  {
-    match: 'youtube.com',
-    describe: '自动跳过youtube广告',
-    run: function () {
-      ready('.ytp-ad-skip-button', function (element) {
-        element.click()
-      })
+        document.title = documentTitle
 
-      ready('.ytp-ad-skip-button-modern', function (element) {
-        element.click()
-      })
-    }
-  },
-  {
-    match: 'youtube.com',
-    describe: '自动跳过开启广告展示的弹窗提醒',
-    run: function () {
-      ready('tp-yt-paper-dialog.ytd-popup-container', function (element) {
-        if (element.innerText.includes('广告拦截')) {
-          element.parentNode.removeChild(element)
+        videoInfo.documentTitle = documentTitle
+      }
+
+      /* 跳过标识为广告的视频 */
+      function skipAdVideo (videoWrapEl, live) {
+        const nextBtn = document.querySelector('div[data-e2e="video-switch-next-arrow"]')
+
+        if (!nextBtn || (nextBtn && nextBtn.lastSkipTime && Date.now() - nextBtn.lastSkipTime < 600)) {
+          return
         }
-      })
 
-      setInterval(function () {
-        document.querySelectorAll('tp-yt-paper-dialog.ytd-popup-container').forEach(function (element) {
-          if (element.innerText.includes('广告拦截')) {
-            element.parentNode.removeChild(element)
+        const videoDescEl = videoWrapEl.querySelector('div.title[data-e2e="video-desc"]')
+
+        if (videoDescEl && videoDescEl.innerText.endsWith('广告')) {
+          nextBtn.click()
+          nextBtn.lastSkipTime = Date.now()
+        }
+
+        if (live && videoWrapEl && videoWrapEl.innerText.includes('广告')) {
+          nextBtn.click()
+          nextBtn.lastSkipTime = Date.now()
+        }
+      }
+
+      /* 使用MutationObserver监听如果发现#slidelist元素的子元素，或子元素属性发生变化，就执行回调函数 */
+      const observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          if (mutation.type === 'childList' || mutation.type === 'attributes') {
+            /* 视频处理 */
+            const activeItem = document.querySelector('#slidelist div[data-e2e="feed-active-video"]')
+            if (activeItem) {
+              setTimeout(() => {
+                skipAdVideo(activeItem)
+                // setVideoTitle(activeItem)
+              }, 100)
+            }
+
+            /* 直播处理 */
+            const liveItem = document.querySelector('#slidelist div[data-e2e="feed-live"]>a')
+            if (liveItem) {
+              skipAdVideo(liveItem.parentNode, true)
+            }
           }
         })
-      }, 600)
+      })
+
+      ready('#slidelist', function (element) {
+        observer.observe(document.querySelector('#slidelist'), {
+          attributes: true,
+          childList: true,
+          subtree: true
+        })
+      })
+
+      ready('#videoSideBar .recommend-comment-login-mask', function (element) {
+        element.style.display = 'none'
+      })
     }
   },
+  // {
+  //   match: 'youtube.com',
+  //   describe: '自动跳过youtube广告',
+  //   run: function () {
+  //     const startTime = new Date().getTime()
+
+  //     const skipHandler = (element) => {
+  //       const endTime = new Date().getTime()
+  //       const time = endTime - startTime
+  //       /* 过早触发会导致广告无法跳过 */
+  //       if (time < 3000) {
+  //         return false
+  //       }
+
+  //       /* 页面处于不可见状态时候也不触发 */
+  //       if (document.hidden) {
+  //         return false
+  //       }
+
+  //       element.click()
+  //     }
+
+  //     ready('.ytp-ad-skip-button', function (element) {
+  //       skipHandler(element)
+  //     })
+
+  //     ready('.ytp-ad-skip-button-modern', function (element) {
+  //       skipHandler(element)
+  //     })
+  //   }
+  // },
+  // {
+  //   match: 'youtube.com',
+  //   describe: '自动跳过开启广告展示的弹窗提醒',
+  //   run: function () {
+  //     ready('tp-yt-paper-dialog.ytd-popup-container', function (element) {
+  //       if (element.innerText.includes('广告拦截')) {
+  //         element.parentNode.removeChild(element)
+  //       }
+  //     })
+
+  //     setInterval(function () {
+  //       document.querySelectorAll('tp-yt-paper-dialog.ytd-popup-container').forEach(function (element) {
+  //         if (element.innerText.includes('广告拦截')) {
+  //           element.parentNode.removeChild(element)
+  //         }
+  //       })
+  //     }, 600)
+  //   }
+  // },
   {
     match: 'youtube.com',
     describe: '隐藏油管Logo',
