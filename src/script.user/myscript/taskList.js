@@ -19,6 +19,15 @@ const taskList = [
     }
   },
   {
+    match: 'inux.do',
+    describe: 'inux.do体验优化',
+    run: function () {
+      ready('section#d-splash', function (element) {
+        element.remove()
+      })
+    }
+  },
+  {
     match: 'douyin.com',
     describe: '抖音网页版体验优化',
     run: function () {
