@@ -2134,6 +2134,13 @@ function getTabId () {
 /* 一开始就初始化好curTabId，这样后续就不需要异步获取Tabid，部分场景下需要用到 */
 getTabId();
 
+var blacklist = {
+  urls: [],
+  domains: [
+    'challenges.cloudflare.com'
+  ]
+};
+
 /* 劫持localStorage.setItem 方法，增加修改监听功能 */
 const orignalLocalStorageSetItem = localStorage.setItem;
 localStorage.setItem = function (key, newValue) {
@@ -2240,10 +2247,23 @@ function moduleSetup (mods) {
   });
 }
 
+/* 判断当前页面或当前域名是否在黑名单中 */
+function isInBlacklist () {
+  const currentUrl = window.location.href;
+  const currentDomain = window.location.hostname;
+  const isInBlacklist = blacklist.urls.includes(currentUrl) || blacklist.domains.includes(currentDomain);
+  return isInBlacklist
+}
+
 /**
  * 脚本入口
  */
 async function init (retryCount = 0) {
+  if (isInBlacklist()) {
+    console.warn('当前页面在黑名单中，不执行脚本！');
+    return false
+  }
+
   if (!window.document.documentElement) {
     setTimeout(() => {
       if (retryCount < 200) {

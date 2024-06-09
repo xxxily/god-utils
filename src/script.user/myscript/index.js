@@ -12,6 +12,7 @@ import taskList from './taskList'
 import { menuRegister, addMenu } from './menuManager'
 import { initEruda, initVconsole } from './helper'
 import { getTabId } from './getId'
+import blacklist from './blacklist'
 
 /* 劫持localStorage.setItem 方法，增加修改监听功能 */
 const orignalLocalStorageSetItem = localStorage.setItem
@@ -119,10 +120,23 @@ function moduleSetup (mods) {
   })
 }
 
+/* 判断当前页面或当前域名是否在黑名单中 */
+function isInBlacklist () {
+  const currentUrl = window.location.href
+  const currentDomain = window.location.hostname
+  const isInBlacklist = blacklist.urls.includes(currentUrl) || blacklist.domains.includes(currentDomain)
+  return isInBlacklist
+}
+
 /**
  * 脚本入口
  */
 async function init (retryCount = 0) {
+  if (isInBlacklist()) {
+    console.warn('当前页面在黑名单中，不执行脚本！')
+    return false
+  }
+
   if (!window.document.documentElement) {
     setTimeout(() => {
       if (retryCount < 200) {
